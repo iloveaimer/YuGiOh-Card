@@ -60,6 +60,9 @@ importers:
       '@vitejs/plugin-vue':
         specifier: ^6.0.5
         version: 6.0.5(vite@8.0.2(@types/node@25.5.0)(sass-embedded@1.98.0)(sass@1.98.0))(vue@3.5.30(typescript@6.0.2))
+      agent-browser:
+        specifier: ^0.31.1
+        version: 0.31.1
       eslint:
         specifier: ^10.1.0
         version: 10.1.0
@@ -1323,6 +1326,11 @@ packages:
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
+
+  agent-browser@0.31.1:
+    resolution: {integrity: sha512-RjgfT0EsHe1oZQbwzUqJTPb7w3sU8DGbbAjMxLNI5dW1y0cc81TbVsqgjqQJmsy3GEbEcKe/ryARwmWGqJAXXQ==}
+    engines: {node: '>=24.0.0', pnpm: '>=11.0.0'}
+    hasBin: true
 
   ajv-draft-04@1.0.0:
     resolution: {integrity: sha512-mv00Te6nmYbRp5DCwclxtt7yV/joXJPGS7nM+97GdxvuttCOfgI3K4U25zboyeX0O+myI8ERluxQe5wljMmVIw==}
@@ -4647,6 +4655,8 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
+
+  agent-browser@0.31.1: {}
 
   ajv-draft-04@1.0.0(ajv@8.18.0):
     optionalDependencies:
