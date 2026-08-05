@@ -16,7 +16,7 @@
   </a>
 </p>
 
-<p align="center">A tool for rendering Yu-Gi-Oh! cards using Canvas</p>
+<p align="center">A tool for rendering Yu-Gi-Oh! cards using Canvas, with visual form editor and desktop app packaging</p>
 
 <p align="center">
   <img src="src/assets/image/banner.jpg">
@@ -50,10 +50,35 @@ Requirements: Node.js 22+ and pnpm.
 ```bash
 # Node.js 22+
 pnpm install
-pnpm dev
-pnpm build
-pnpm build:lib
+pnpm dev            # Web development
+pnpm dev:electron   # Electron desktop app development
+pnpm build          # Web build
+pnpm build:lib      # Library build
+pnpm build:electron # Electron build
+pnpm build:exe      # Package Windows EXE installer
 ```
+
+### Electron Desktop App
+
+Package as a standalone Windows EXE installer, no browser needed.
+
+```bash
+pnpm dev:electron   # Electron dev (with DevTools)
+pnpm build:exe      # Package EXE to release/ directory
+```
+
+### Visual Editor
+
+The project includes a visual form editor with:
+
+- 5 card type switching with live preview
+- Card name color, gradient, fonts (4 Chinese fonts)
+- Image upload (local file / URL)
+- Link arrow selector
+- JSON import/export (named by card name)
+- Zoom, high-res PNG export
+
+Run with: `pnpm dev` or `pnpm dev:electron`
 
 ### Browser
 
@@ -118,7 +143,7 @@ http.createServer((req, res) => {
 |    Property Name    |        Description        |  Type   |                                                       Options                                                       |                                                  Notes                                                  |      Default      |
 |:-------------------:|:-------------------------:|:-------:|:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------:|:-----------------:|
 |      language       |         Language          |  enum   |                                     'sc' / 'tc' / 'jp' / 'kr' / 'en' / 'astral'                                     |             Simplified Chinese / Traditional Chinese / Japanese / Korean / English / Astral             |       'sc'        |
-|        font         |           Font            |  enum   |                                             '' / 'custom1' / 'custom2'                                              |                                      Default / Custom 1 / Custom 2                                      |        ''         |
+|        font         |           Font            |  enum   |                                 '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt'                                  |       Default / XLSJ / XLSF / HKLW7 / KT      |        ''         |
 |        name         |         Card Name         | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
 |        color        |      Card Name Color      | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
 |        align        |    Card Name Alignment    |  enum   |                                             'left' / 'center' / 'right'                                             |                                          Left / Center / Right                                          |      'left'       |
@@ -147,9 +172,9 @@ http.createServer((req, res) => {
 |  descriptionWeight  |    Effect Text Weight     | number  |                                                          —                                                          |                                                    —                                                    |         0         |
 |       package       |         Card Pack         | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
 |      password       |       Card Password       | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|      copyright      |         Copyright         |  enum   |                                                 'sc' / 'jp' / 'en'                                                  |                                 Simplified Chinese / Japanese / English                                 |        ''         |
-|        laser        |        Laser Mark         |  enum   |                                      'laser1' / 'laser2' / 'laser3' / 'laser4'                                      |                                  Style 1 / Style 2 / Style 3 / Style 4                                  |        ''         |
-|        rare         |          Rarity           |  enum   |                                 'dt' / 'ur' / 'gr' / 'hr' / 'ser' / 'gser' / 'pser'                                 |                                  DT / UR / GR / HR / SER / GSER / PSER                                  |        ''         |
+|      copyright      |         Copyright         |  enum   |                                                    '' / 'ocg'                                                     |               None / OCG               |        ''         |
+|        laser        |        Laser Mark         |  enum   |                                            '' / 'laser-gold' / 'laser-silver'                                            |               None / Gold / Silver              |        ''         |
+|        rare         |          Rarity           |  enum   |                       'hr' / 'ser' / 'gser' / 'pser' / 'ur' / 'sr' / 'r' / 'n' / 'npr'                       |      HR / SER / GSER / PSER / UR / SR / R / N / NPR      |        ''         |
 |      twentieth      |     20th Anniversary      | boolean |                                                          —                                                          |                                                    —                                                    |       false       |
 |       radius        |      Rounded Corners      | boolean |                                                          —                                                          |                                                    —                                                    |       true        |
 |        scale        |        Card Scale         | number  |                                                          —                                                          |                                                    —                                                    |         1         |
@@ -179,8 +204,8 @@ http.createServer((req, res) => {
 |      package      |      Card Pack      | string  |                                   —                                    |                             —                              |    ''     |
 |     password      |    Card Password    | string  |                                   —                                    |                             —                              |    ''     |
 |      legend       |      Legendary      | boolean |                                   —                                    |                             —                              |   false   |
-|       laser       |     Laser Mark      |  enum   |               'laser1' / 'laser2' / 'laser3' / 'laser4'                |           Style 1 / Style 2 / Style 3 / Style 4            |    ''     |
-|       rare        |       Rarity        |  enum   |                          'sr' / 'rr' / 'pser'                          |                       SR / RR / PSER                       |    ''     |
+|       laser       |     Laser Mark      |  enum   |                '' / 'laser-gold' / 'laser-silver'                |       None / Gold / Silver       |    ''     |
+|       rare        |       Rarity        |  enum   | 'hr' / 'ser' / 'gser' / 'pser' / 'ur' / 'sr' / 'r' / 'n' / 'npr' | HR / SER / GSER / PSER / UR / SR / R / N / NPR |    ''     |
 |      radius       |   Rounded Corners   | boolean |                                   —                                    |                             —                              |   true    |
 |       scale       |     Card Scale      | number  |                                   —                                    |                             —                              |     1     |
 
@@ -209,7 +234,7 @@ http.createServer((req, res) => {
 |   Property Name   |        Description        |  Type   |                                         Options                                          |                                   Notes                                    |  Default  |
 |:-----------------:|:-------------------------:|:-------:|:----------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------:|:---------:|
 |     language      |         Language          |  enum   |                                           'jp'                                           |                                  Japanese                                  |   'jp'    |
-|       font        |           Font            |  enum   |                                '' / 'custom1' / 'custom2'                                |                       Default / Custom 1 / Custom 2                        |    ''     |
+|       font        |           Font            |  enum   |                                 '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt'                                  |       Default / XLSJ / XLSF / HKLW7 / KT      |    ''     |
 |       name        |         Card Name         | string  |                                            —                                             |                                     —                                      |    ''     |
 |       color       |      Card Name Color      | string  |                                            —                                             |                                     —                                      |    ''     |
 |       align       |    Card Name Alignment    |  enum   |                               'left' / 'center' / 'right'                                |                           Left / Center / Right                            |  'left'   |
@@ -233,6 +258,6 @@ http.createServer((req, res) => {
 |      package      |         Card Pack         | string  |                                            —                                             |                                     —                                      |    ''     |
 |     password      |       Card Password       | string  |                                            —                                             |                                     —                                      |    ''     |
 |     copyright     |         Copyright         |  enum   |                                           'jp'                                           |                                  Japanese                                  |    ''     |
-|       laser       |        Laser Mark         |  enum   |                        'laser1' / 'laser2' / 'laser3' / 'laser4'                         |                   Style 1 / Style 2 / Style 3 / Style 4                    |    ''     |
+|       laser       |        Laser Mark         |  enum   |                        '' / 'laser-gold' / 'laser-silver'                        |       None / Gold / Silver       |    ''     |
 |      radius       |      Rounded Corners      | boolean |                                            —                                             |                                     —                                      |   true    |
 |       scale       |        Card Scale         | number  |                                            —                                             |                                     —                                      |     1     |

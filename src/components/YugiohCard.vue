@@ -2,7 +2,9 @@
   <div class="yugioh-card-container">
     <!-- 左侧：卡片预览 -->
     <div class="card-preview">
-      <div ref="card" class="card-canvas" />
+      <div class="card-canvas">
+        <div ref="card" class="card-view"></div>
+      </div>
       <div class="preview-toolbar">
         <el-button-group>
           <el-tooltip content="缩小" placement="bottom">
@@ -17,8 +19,10 @@
         </el-button-group>
         <div class="zoom-text">{{ Math.round(formData.scale * 100) }}%</div>
         <div class="toolbar-spacer" />
+        <el-button size="small" :icon="Upload" @click="importData">导入数据</el-button>
+        <el-button size="small" :icon="Download" @click="exportData">导出数据</el-button>
         <el-button size="small" :icon="RefreshLeft" @click="resetCard">重置</el-button>
-        <el-button size="small" type="primary" :icon="Download" @click="exportImage">导出图片</el-button>
+        <el-button size="small" type="primary" :icon="PictureFilled" @click="exportImage">导出图片</el-button>
       </div>
     </div>
 
@@ -56,7 +60,7 @@
           <!-- 卡名 -->
           <div class="field">
             <label class="field-label">卡名</label>
-            <el-input v-model="formData.name" size="default" @input="updateCard" placeholder="输入卡片名称" />
+            <el-input v-model="formData.name" size="default" @input="scheduleUpdate()" placeholder="输入卡片名称" />
           </div>
 
           <!-- 卡名颜色 -->
@@ -236,7 +240,7 @@
           <!-- 种族 / 类型 -->
           <div class="field" v-if="showMonsterTypeText">
             <label class="field-label">种族</label>
-            <el-input v-model="formData.monsterType" size="default" @input="updateCard" placeholder="例：龙/通常" />
+            <el-input v-model="formData.monsterType" size="default" @input="scheduleUpdate()" placeholder="例：龙/通常" />
           </div>
 
           <!-- ATK / DEF -->
@@ -290,7 +294,7 @@
               type="textarea"
               :rows="2"
               size="default"
-              @input="updateCard"
+              @input="scheduleUpdate()"
               placeholder="输入灵摆效果描述"
             />
           </div>
@@ -303,7 +307,7 @@
               type="textarea"
               :rows="3"
               size="default"
-              @input="updateCard"
+              @input="scheduleUpdate()"
               placeholder="输入卡片效果描述"
             />
           </div>
@@ -312,11 +316,11 @@
           <div class="field-row" v-if="showDesc">
             <div class="field field-half">
               <label class="field-label">字号</label>
-              <el-slider v-model="formData.descriptionZoom" :min="0.5" :max="2" :step="0.05" @change="updateCard" />
+              <el-slider v-model="formData.descriptionZoom" :min="0.5" :max="2" :step="0.05" @change="scheduleUpdate()" />
             </div>
             <div class="field field-half">
               <label class="field-label">字重</label>
-              <el-slider v-model="formData.descriptionWeight" :min="0" :max="10" @change="updateCard" />
+              <el-slider v-model="formData.descriptionWeight" :min="0" :max="10" @change="scheduleUpdate()" />
             </div>
           </div>
 
@@ -333,11 +337,11 @@
           <div class="field-row" v-if="showPackage || showPassword">
             <div class="field field-half" v-if="showPackage">
               <label class="field-label">卡包</label>
-              <el-input v-model="formData.package" size="default" @input="updateCard" placeholder="例：SD25-SC001" />
+              <el-input v-model="formData.package" size="default" @input="scheduleUpdate()" placeholder="例：SD25-SC001" />
             </div>
             <div class="field field-half" v-if="showPassword">
               <label class="field-label">密码</label>
-              <el-input v-model="formData.password" size="default" @input="updateCard" placeholder="8位数字" />
+              <el-input v-model="formData.password" size="default" @input="scheduleUpdate()" placeholder="8位数字" />
             </div>
           </div>
 
@@ -456,8 +460,10 @@ import {
   Close,
   Download,
   Link,
+  PictureFilled,
   RefreshLeft,
   RefreshRight,
+  Upload,
   ZoomIn,
   ZoomOut,
 } from '@element-plus/icons-vue';
@@ -581,11 +587,38 @@ const arrowDirections = [
   { label: '左上', value: 8, rotate: 315 },
 ];
 
+// 轻量防抖：避免长文本实时输入时频繁重绘卡顿
+let updateTimer = null;
+const scheduleUpdate = (immediate = false) => {
+  jsonData.value = JSON.stringify(formData, null, 2);
+  if (immediate) {
+    if (updateTimer) clearTimeout(updateTimer);
+    cardLeaf.value?.setData({ ...formData });
+    return;
+  }
+  if (updateTimer) clearTimeout(updateTimer);
+  updateTimer = setTimeout(() => {
+    cardLeaf.value?.setData({ ...formData });
+  }, 120);
+};
+
+// 监听 canvas 尺寸变化（字体异步加载后会改变），自动同步包装层
+let canvasResizeObserver = null;
+const observeCanvas = () => {
+  canvasResizeObserver?.disconnect();
+  const canvas = card.value?.querySelector('canvas');
+  if (canvas) {
+    canvasResizeObserver = new ResizeObserver(() => syncCardViewSize());
+    canvasResizeObserver.observe(canvas);
+  }
+};
+
 onMounted(() => {
   changeCard(form.card);
 });
 
 onBeforeUnmount(() => {
+  canvasResizeObserver?.disconnect();
   cardLeaf.value?.leafer.destroy();
 });
 
@@ -614,6 +647,11 @@ const getCardDemo = (cardType) => {
 const changeCard = (cardType) => {
   form.card = cardType;
   cardLeaf.value?.leafer.destroy();
+  // 重置滚动位置，避免旧卡的滚动偏移导致新卡显示偏移
+  if (card.value) {
+    card.value.scrollTop = 0;
+    card.value.scrollLeft = 0;
+  }
   const Card = getCardClass(cardType);
   const demo = getCardDemo(cardType);
   demo.scale = 0.5; // 默认缩小到 50% 以便查看完整卡片
@@ -624,10 +662,13 @@ const changeCard = (cardType) => {
   cardLeaf.value = new Card({
     view: card.value,
     data: demo,
-    resourcePath: process.env.NODE_ENV === 'production'
-      ? 'https://raw.githubusercontent.com/kooriookami/yugioh-card/refs/heads/master/src/assets/yugioh-card'
-      : 'src/assets/yugioh-card',
+    resourcePath: window.__YG__?.resourcePath
+      ?? (import.meta.env.PROD
+        ? 'https://raw.githubusercontent.com/kooriookami/yugioh-card/refs/heads/master/src/assets/yugioh-card'
+        : 'src/assets/yugioh-card'),
   });
+  syncCardViewSize(); // 包装层匹配 canvas 尺寸，flex 自动居中
+  observeCanvas();     // 监听后续异步加载导致的 canvas 尺寸变化
   jsonData.value = JSON.stringify(demo, null, 2);
 };
 
@@ -680,25 +721,89 @@ const resetCard = () => {
 
 const exportImage = () => {
   if (!cardLeaf.value?.leafer) return;
-  cardLeaf.value.leafer.export('yugioh-card.png', {
+  const name = (formData.name || '卡片').replace(/[/:*?"<>|]/g, '-');
+  cardLeaf.value.leafer.export(`${name}.png`, {
     screenshot: true,
     pixelRatio: devicePixelRatio,
   });
 };
 
+// 导出 JSON 数据
+const exportData = () => {
+  const name = (formData.name || '卡片').replace(/[/:*?"<>|]/g, '-');
+  const jsonStr = JSON.stringify(formData, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${name}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  ElMessage.success('数据已导出');
+};
+
+// 导入 JSON 数据
+const importData = () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        // 与当前卡类型的默认值合并，避免导入旧/残缺数据丢失字段
+        const demo = getCardDemo(form.card);
+        const merged = { ...demo, ...data };
+        Object.keys(formData).forEach(key => delete formData[key]);
+        Object.assign(formData, merged);
+        if (cardLeaf.value) {
+          cardLeaf.value.setData(merged);
+        }
+        jsonData.value = JSON.stringify(merged, null, 2);
+        ElMessage.success('数据已导入');
+      } catch (err) {
+        ElMessage.error('JSON 格式错误，导入失败');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+};
+
+// 让 card-view 包装层匹配 canvas 实际尺寸，配合 flex 居中
+const syncCardViewSize = () => {
+  if (!card.value) return;
+  const canvas = card.value.querySelector('canvas');
+  if (!canvas) return;
+  // 用 offsetWidth（CSS像素）而非 canvas.width（属性像素，受 devicePixelRatio 影响）
+  card.value.style.width = canvas.offsetWidth + 'px';
+  card.value.style.height = canvas.offsetHeight + 'px';
+};
+
+// 仅更新画布，不刷新 JSON 编辑器（用于缩放等仅改视图的操作）
+const updateCanvasOnly = () => {
+  if (cardLeaf.value) {
+    cardLeaf.value.setData({ ...formData });
+  }
+  syncCardViewSize();
+};
+
 const zoomIn = () => {
   formData.scale = Math.min(2, (formData.scale || 0.5) + 0.1);
-  updateCard();
+  updateCanvasOnly();
 };
 
 const zoomOut = () => {
   formData.scale = Math.max(0.3, (formData.scale || 0.5) - 0.1);
-  updateCard();
+  updateCanvasOnly();
 };
 
 const resetZoom = () => {
   formData.scale = 0.5;
-  updateCard();
+  updateCanvasOnly();
 };
 
 // 图片上传
@@ -727,6 +832,7 @@ const clearImage = () => {
 const onImageError = () => {
   formData.image = '';
   updateCard();
+  ElMessage.warning('图片加载失败，已清除');
 };
 
 // 连接箭头
@@ -742,12 +848,13 @@ const toggleArrow = (val) => {
   updateCard();
 };
 
-// JSON 双向绑定（加防抖防止循环更新）
+// JSON 编辑器 → 表单 单向同步（带防抖防止循环更新）
 let syncingFromJson = false;
-watch(() => jsonData.value, () => {
+watch(() => jsonData.value, (newVal, oldVal) => {
   if (syncingFromJson) return;
   try {
-    const parsed = JSON.parse(jsonData.value);
+    const parsed = JSON.parse(newVal);
+    if (!parsed || typeof parsed !== 'object') return;
     syncingFromJson = true;
     Object.keys(formData).forEach(key => delete formData[key]);
     Object.assign(formData, parsed);
@@ -755,8 +862,9 @@ watch(() => jsonData.value, () => {
       cardLeaf.value.setData(parsed);
     }
     syncingFromJson = false;
-  } catch (e) {
+  } catch {
     syncingFromJson = false;
+    // JSON 格式错误时不报错，用户在 JSON 编辑器中自行修正
   }
 });
 </script>
@@ -773,6 +881,7 @@ watch(() => jsonData.value, () => {
 // 左侧卡片预览区
 .card-preview {
   flex: 1;
+  min-width: 400px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -785,6 +894,13 @@ watch(() => jsonData.value, () => {
     align-items: center;
     justify-content: center;
     padding: 30px;
+    min-height: 0;
+
+    .card-view {
+      position: relative;  // Leafer canvas absolute 的锚点
+      flex-shrink: 0;      // 被 flex 居中，不压缩
+      // 宽高由 JS 根据 canvas 实际尺寸动态设置
+    }
   }
 
   .preview-toolbar {
