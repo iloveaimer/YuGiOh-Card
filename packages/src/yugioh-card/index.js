@@ -707,12 +707,14 @@ export class YugiohCard extends Card {
     }
 
     const suffix = this.data.type === 'pendulum' ? '-pendulum' : '';
-    const rareUrl = this.data.rare ? `${this.baseImage}/rare-${this.data.rare}${suffix}.png` : '';
+    const supportedRare = ['dt', 'ur', 'gr', 'hr', 'ser', 'gser', 'pser'];
+    const rareUrl = this.data.rare && supportedRare.includes(this.data.rare)
+      ? `${this.baseImage}/rare-${this.data.rare}${suffix}.png` : '';
 
     this.rareLeaf.set({
       url: rareUrl,
       cornerRadius: this.data.radius ? 24 : 0,
-      visible: this.data.rare,
+      visible: !!rareUrl,
       zIndex: 100,
     });
   }
