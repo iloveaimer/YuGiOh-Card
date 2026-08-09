@@ -92,6 +92,20 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
+    server: {
+      proxy: {
+        '/ygotoken-img': {
+          target: 'http://www.ygotoken.com/images',
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/ygotoken-img/, ''),
+        },
+        '/ygotoken-api': {
+          target: 'http://www.ygotoken.com',
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/ygotoken-api/, ''),
+        },
+      },
+    },
     build: buildConfigMap[buildTarget],
   };
 });

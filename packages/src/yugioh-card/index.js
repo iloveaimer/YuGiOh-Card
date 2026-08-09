@@ -526,7 +526,7 @@ export class YugiohCard extends Card {
       fontFamily = 'ygo-en-italic';
     }
 
-    let height = 385;
+    let height = 440;
     if (!['spell', 'trap'].includes(this.data.type)) {
       if (this.showEffect) {
         height -= effectHeight;
@@ -693,8 +693,8 @@ export class YugiohCard extends Card {
     const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
     this.laserLeaf.set({
       url: laserUrl,
-      x: 1276,
-      y: 1913,
+      x: 1275,
+      y: 1911,
       visible: this.data.laser,
       zIndex: 120,
     });

@@ -29,7 +29,7 @@ export default {
   descriptionAlign: false,
   descriptionZoom: 1,
   descriptionWeight: 0,
-  package: 'SD25-SC001',
+  package: '',
   password: '89631139',
   copyright: '',
   laser: '',

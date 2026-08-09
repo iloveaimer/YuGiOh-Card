@@ -16,11 +16,25 @@
   </a>
 </p>
 
-<p align="center">A tool for rendering Yu-Gi-Oh! cards using Canvas, with visual form editor and desktop app packaging</p>
+<p align="center">A visual Yu-Gi-Oh! card maker with Canvas rendering, OCG card search, random generation, HD artwork, and desktop EXE packaging</p>
 
 <p align="center">
   <img src="src/assets/image/banner.jpg">
 </p>
+
+## ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| 🔍 **OCG Card Search** | Search by password or name, auto-fill all fields |
+| 🎲 **Random Card** | Pick a random card from the full OCG database |
+| 🌐 **Multi-Locale Names** | YGOPro / Simplified Chinese / Master Duel / NWBBS / CNOCG |
+| 🖼️ **HD Artwork** | 1200×1200 WebP art|
+| 🎨 **Full Customization** | Color/gradient/fonts, type/attribute/level/ATK-DEF, link arrows, laser marks, rarities |
+| 📦 **One-Click Export** | JSON import/export, high-res PNG (up to 3x) |
+| 🖥️ **Desktop App** | Windows EXE, standalone, no browser needed |
+
+> Card data by [ygocdb.com](https://ygocdb.com/), artwork by [ygotoken.com](http://www.ygotoken.com/)
 
 Currently there are 5 types of cards: 🚀🚀🚀🚀🚀
 
@@ -48,37 +62,19 @@ Requirements: Node.js 22+ and pnpm.
 ### Workspace Development
 
 ```bash
-# Node.js 22+
 pnpm install
 pnpm dev            # Web development
-pnpm dev:electron   # Electron desktop app development
-pnpm build          # Web build
-pnpm build:lib      # Library build
-pnpm build:electron # Electron build
-pnpm build:exe      # Package Windows EXE installer
+pnpm dev:electron   # Electron desktop app
+pnpm build:exe      # Package Windows EXE
 ```
 
-### Electron Desktop App
-
-Package as a standalone Windows EXE installer, no browser needed.
+#### 📦 Package Windows EXE
 
 ```bash
-pnpm dev:electron   # Electron dev (with DevTools)
-pnpm build:exe      # Package EXE to release/ directory
+pnpm build:exe
 ```
 
-### Visual Editor
-
-The project includes a visual form editor with:
-
-- 5 card type switching with live preview
-- Card name color, gradient, fonts (4 Chinese fonts)
-- Image upload (local file / URL)
-- Link arrow selector
-- JSON import/export (named by card name)
-- Zoom, high-res PNG export
-
-Run with: `pnpm dev` or `pnpm dev:electron`
+Outputs an NSIS installer to `release/`. Supports window memory, F12 DevTools, F5 refresh.
 
 ### Browser
 

@@ -1,669 +1,729 @@
 <template>
   <div class="yugioh-card-container">
-    <!-- 左侧：卡片预览 -->
-    <div class="card-preview">
-      <div class="card-canvas">
-        <div ref="card" class="card-view" />
-      </div>
-      <div class="preview-toolbar">
-        <el-button-group>
-          <el-tooltip content="缩小" placement="bottom">
-            <el-button size="small" :icon="ZoomOut" @click="zoomOut" />
+    <div class="main-row">
+      <!-- 左侧：卡片预览 -->
+      <div class="card-preview">
+        <div class="card-canvas">
+          <div ref="card" class="card-view" />
+        </div>
+        <div class="preview-toolbar">
+          <el-button-group>
+            <el-tooltip content="缩小" placement="bottom">
+              <el-button size="small" :icon="ZoomOut" @click="zoomOut" />
+            </el-tooltip>
+            <el-tooltip content="放大" placement="bottom">
+              <el-button size="small" :icon="ZoomIn" @click="zoomIn" />
+            </el-tooltip>
+            <el-tooltip content="重置缩放" placement="bottom">
+              <el-button size="small" :icon="RefreshRight" @click="resetZoom" />
+            </el-tooltip>
+          </el-button-group>
+          <div class="zoom-text">{{ Math.round(formData.scale * 100) }}%</div>
+          <div class="toolbar-spacer" />
+          <el-tooltip content="从 OCG 卡库随机调取一张真实卡片" placement="bottom">
+            <el-button
+              size="small"
+              :icon="Coin"
+              :loading="randomLoading"
+              @click="randomGenerate"
+            >
+              随机一卡
+            </el-button>
           </el-tooltip>
-          <el-tooltip content="放大" placement="bottom">
-            <el-button size="small" :icon="ZoomIn" @click="zoomIn" />
+          <el-tooltip content="扫描中文卡名/效果，一键打开日文读音查询" placement="bottom">
+            <el-button size="small" :icon="Reading" @click="autoPhonetic">注音</el-button>
           </el-tooltip>
-          <el-tooltip content="重置缩放" placement="bottom">
-            <el-button size="small" :icon="RefreshRight" @click="resetZoom" />
+          <el-tooltip content="从 JSON 文件导入卡数据" placement="bottom">
+            <el-button size="small" :icon="Upload" @click="importData">导入</el-button>
           </el-tooltip>
-        </el-button-group>
-        <div class="zoom-text">{{ Math.round(formData.scale * 100) }}%</div>
-        <div class="toolbar-spacer" />
-        <el-tooltip content="扫描中文卡名/效果，一键打开日文读音查询" placement="bottom">
-          <el-button size="small" :icon="Reading" @click="autoPhonetic">一键注音</el-button>
-        </el-tooltip>
-        <el-button size="small" :icon="Upload" @click="importData">导入数据</el-button>
-        <el-button size="small" :icon="Download" @click="exportData">导出数据</el-button>
-        <el-button size="small" :icon="RefreshLeft" @click="resetCard">重置</el-button>
-        <el-button
-          size="small"
-          type="primary"
-          :icon="PictureFilled"
-          @click="exportImage"
-        >
-          导出图片
-        </el-button>
-      </div>
-    </div>
-
-    <!-- 右侧：参数面板 -->
-    <div class="param-panel">
-      <!-- 顶部：标题 -->
-      <div class="param-header">
-        <h2 class="param-title">游戏王卡片生成器</h2>
-        <p class="param-desc">最大尺寸 1394 px × 2031 px</p>
-      </div>
-
-      <!-- 顶部：卡片类型切换 -->
-      <div class="card-type-bar">
-        <div
-          v-for="opt in cardTypeOptions"
-          :key="opt.value"
-          class="card-type-item"
-          :class="{ active: form.card === opt.value }"
-          @click="changeCard(opt.value)"
-        >
-          {{ opt.label }}
+          <el-tooltip content="导出当前卡片为 JSON 文件" placement="bottom">
+            <el-button size="small" :icon="Download" @click="exportData">导出</el-button>
+          </el-tooltip>
+          <el-tooltip content="重置为默认卡数据" placement="bottom">
+            <el-button size="small" :icon="RefreshLeft" @click="resetCard">重置</el-button>
+          </el-tooltip>
+          <el-button
+            size="small"
+            type="primary"
+            :icon="PictureFilled"
+            @click="exportImage"
+          >
+            导出图片
+          </el-button>
         </div>
       </div>
 
-      <!-- 表单主体 -->
-      <div class="form-scroll">
-        <div class="form-inner">
-          <!-- 语言 -->
-          <div class="field">
-            <label class="field-label">语言</label>
-            <el-select
-              v-model="formData.language"
-              size="default"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="简体中文" value="sc" />
-              <el-option label="繁体中文" value="tc" />
-              <el-option label="日语" value="jp" />
-              <el-option label="韩语" value="kr" />
-              <el-option label="英语" value="en" />
-              <el-option label="星光体" value="astral" />
-            </el-select>
+      <!-- 右侧：参数面板 -->
+      <div class="param-panel">
+        <!-- 顶部：标题 -->
+        <div class="param-header">
+          <h2 class="param-title">游戏王卡片生成器</h2>
+          <p class="param-desc">YGO Card Markers</p>
+        </div>
+
+        <!-- 顶部：卡片类型切换 -->
+        <div class="card-type-bar">
+          <div
+            v-for="opt in cardTypeOptions"
+            :key="opt.value"
+            class="card-type-item"
+            :class="{ active: form.card === opt.value }"
+            @click="changeCard(opt.value)"
+          >
+            {{ opt.label }}
           </div>
+        </div>
 
-          <!-- 字体 -->
-          <div v-if="showFontSelect" class="field">
-            <label class="field-label">字体</label>
-            <el-select
-              v-model="formData.font"
-              placeholder="系统默认"
-              size="default"
-              style="width: 100%"
-              @change="setFont"
-            >
-              <el-option label="系统默认" value="" />
-              <el-option label="华康隶书体" value="custom1" />
-              <el-option label="文鼎中粗隶简繁" value="custom2" />
-              <el-option label="细隶书简" value="xlsj" />
-              <el-option label="细隶书繁" value="xlsf" />
-              <el-option label="华康隶书" value="hklsw7" />
-              <el-option label="楷体" value="kt" />
-            </el-select>
-          </div>
-
-          <!-- 卡名 -->
-          <div class="field">
-            <label class="field-label">卡名</label>
-            <el-input
-              v-model="formData.name"
-              size="default"
-              placeholder="输入卡片名称"
-              @input="scheduleUpdate()"
-            />
-          </div>
-
-          <!-- 卡名颜色 -->
-          <div class="field">
-            <label class="field-label">卡名颜色</label>
-            <div class="color-row">
-              <el-color-picker v-model="formData.color" size="default" @change="updateCard" />
-              <el-checkbox
-                v-if="showNameGradient"
-                v-model="formData.gradient"
-                style="margin-left: 8px"
-                @change="updateCard"
-              >
-                渐变
-              </el-checkbox>
-              <span class="color-tip">（自动选择清空）</span>
-            </div>
-          </div>
-
-          <!-- 渐变色 -->
-          <template v-if="showNameGradient && formData.gradient">
-            <div class="field-row">
-              <div class="field field-half">
-                <label class="field-label">渐变色1</label>
-                <el-color-picker v-model="formData.gradientColor1" size="default" @change="updateCard" />
-              </div>
-              <div class="field field-half">
-                <label class="field-label">渐变色2</label>
-                <el-color-picker v-model="formData.gradientColor2" size="default" @change="updateCard" />
-              </div>
-            </div>
-          </template>
-
-          <!-- 对齐：el-radio-group 与参考站一致 -->
-          <div v-if="showNameAlign" class="field">
-            <label class="field-label">对齐</label>
-            <el-radio-group v-model="formData.align" @change="updateCard">
-              <el-radio-button
-                v-for="opt in alignOptions"
-                :key="opt.value"
-                :value="opt.value"
-              >
-                <span class="align-icon" :class="'align-' + opt.value" />
-                {{ opt.label }}
-              </el-radio-button>
-            </el-radio-group>
-          </div>
-
-          <!-- 类型：el-radio-group 与参考站一致 -->
-          <div v-if="showCardAttr" class="field">
-            <label class="field-label">类型</label>
-            <el-radio-group v-model="formData.type" @change="setCardType">
-              <el-radio-button
-                v-for="opt in cardTypeChoices"
-                :key="opt.value"
-                :value="opt.value"
-              >
-                {{ opt.label }}
-              </el-radio-button>
-            </el-radio-group>
-          </div>
-
-          <!-- 属性：el-radio-group 与参考站一致 -->
-          <div v-if="showAttribute" class="field">
-            <label class="field-label">属性</label>
-            <el-radio-group v-model="formData.attribute" @change="updateCard">
-              <el-radio-button
-                v-for="opt in attributeOptions"
-                :key="opt.value || 'none'"
-                :value="opt.value"
-              >
-                {{ opt.label }}
-              </el-radio-button>
-            </el-radio-group>
-          </div>
-
-          <!-- 卡图（图片上传/URL输入） -->
-          <div v-if="showImage" class="field field-block">
-            <label class="field-label">卡图</label>
-            <div class="image-upload">
-              <div v-if="formData.image" class="image-preview">
-                <img :src="formData.image" class="preview-img" @error="onImageError">
-                <el-button
-                  size="small"
-                  type="danger"
-                  circle
-                  :icon="Close"
-                  class="remove-btn"
-                  @click="clearImage"
-                />
-              </div>
-              <div class="image-actions">
-                <el-upload
-                  :auto-upload="false"
-                  :show-file-list="false"
-                  accept="image/*"
-                  class="upload-trigger"
-                  @change="onFileUpload"
-                >
-                  <el-button size="small">选择图片</el-button>
-                </el-upload>
-                <el-input
-                  v-model="imageUrl"
-                  size="small"
-                  placeholder="或输入图片URL"
-                  style="flex: 1; min-width: 0"
-                  @keyup.enter="setImageUrl"
-                />
-                <el-button size="small" :icon="Link" @click="setImageUrl">确定</el-button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 怪兽类型 -->
-          <div v-if="showMonsterType" class="field">
-            <label class="field-label">卡类</label>
-            <el-select
-              v-model="formData.cardType"
-              size="default"
-              style="width: 100%"
-              @change="onCardTypeChange"
-            >
-              <el-option label="通常" value="normal" />
-              <el-option label="效果" value="effect" />
-              <el-option label="仪式" value="ritual" />
-              <el-option label="融合" value="fusion" />
-              <el-option label="同调" value="synchro" />
-              <el-option label="超量" value="xyz" />
-              <el-option label="连接" value="link" />
-            </el-select>
-          </div>
-
-          <!-- 灵摆类型 -->
-          <div v-if="showPendulumType" class="field">
-            <label class="field-label">灵摆类型</label>
-            <el-select
-              v-model="formData.pendulumType"
-              size="default"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="通常灵摆" value="normal-pendulum" />
-              <el-option label="效果灵摆" value="effect-pendulum" />
-              <el-option label="仪式灵摆" value="ritual-pendulum" />
-              <el-option label="融合灵摆" value="fusion-pendulum" />
-              <el-option label="同调灵摆" value="synchro-pendulum" />
-              <el-option label="超量灵摆" value="xyz-pendulum" />
-              <el-option label="连接灵摆" value="link-pendulum" />
-            </el-select>
-          </div>
-
-          <!-- 怪兽图标 -->
-          <div v-if="showMonsterIcon" class="field">
-            <label class="field-label">图标</label>
-            <el-select
-              v-model="formData.icon"
-              size="default"
-              clearable
-              placeholder="无"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="装备" value="equip" />
-              <el-option label="场地" value="field" />
-              <el-option label="速攻" value="quick-play" />
-              <el-option label="仪式" value="ritual" />
-              <el-option label="永续" value="continuous" />
-              <el-option label="反击" value="counter" />
-            </el-select>
-          </div>
-
-          <!-- 星级 / 阶级 -->
-          <div v-if="showLevel || showRank" class="field">
-            <label class="field-label">{{ showRank ? '阶级' : '星级' }}</label>
-            <el-input-number
-              v-model="formData.level"
-              :min="0"
-              :max="13"
-              size="default"
-              @change="updateCard"
-            />
-          </div>
-
-          <!-- 灵摆刻度 -->
-          <div v-if="showPendulumScale" class="field">
-            <label class="field-label">灵摆刻度</label>
-            <el-input-number
-              v-model="formData.pendulumScale"
-              :min="0"
-              :max="13"
-              size="default"
-              @change="updateCard"
-            />
-          </div>
-
-          <!-- 种族 / 类型 -->
-          <div v-if="showMonsterTypeText" class="field">
-            <label class="field-label">种族</label>
-            <el-input
-              v-model="formData.monsterType"
-              size="default"
-              placeholder="例：龙/通常"
-              @input="scheduleUpdate()"
-            />
-          </div>
-
-          <!-- ATK / DEF -->
-          <div v-if="showAtk" class="field">
-            <label class="field-label">ATK</label>
-            <div class="input-with-hint">
-              <el-input-number
-                v-model="formData.atk"
-                :min="-2"
+        <!-- 表单主体 -->
+        <div class="form-scroll">
+          <div class="form-inner">
+            <!-- 语言 -->
+            <div class="field">
+              <label class="field-label">语言</label>
+              <el-select
+                v-model="formData.language"
                 size="default"
                 style="width: 100%"
                 @change="updateCard"
-              />
-              <span class="hint">?:-1, ∞:-2</span>
+              >
+                <el-option label="简体中文" value="sc" />
+                <el-option label="繁体中文" value="tc" />
+                <el-option label="日语" value="jp" />
+                <el-option label="韩语" value="kr" />
+                <el-option label="英语" value="en" />
+                <el-option label="星光体" value="astral" />
+              </el-select>
             </div>
-          </div>
-          <div v-if="showDef" class="field">
-            <label class="field-label">DEF</label>
-            <div class="input-with-hint">
-              <el-input-number
-                v-model="formData.def"
-                :min="-2"
+
+            <!-- 字体 -->
+            <div v-if="showFontSelect" class="field">
+              <label class="field-label">字体</label>
+              <el-select
+                v-model="formData.font"
+                placeholder="系统默认"
+                size="default"
+                style="width: 100%"
+                @change="setFont"
+              >
+                <el-option label="系统默认" value="" />
+                <el-option label="华康隶书体" value="custom1" />
+                <el-option label="文鼎中粗隶简繁" value="custom2" />
+                <el-option label="细隶书简" value="xlsj" />
+                <el-option label="细隶书繁" value="xlsf" />
+                <el-option label="华康隶书" value="hklsw7" />
+                <el-option label="楷体" value="kt" />
+              </el-select>
+            </div>
+
+            <!-- 卡名 -->
+            <div class="field">
+              <label class="field-label">卡名</label>
+              <el-input
+                v-model="formData.name"
+                size="default"
+                placeholder="输入卡片名称"
+                clearable
+                @input="scheduleUpdate()"
+              />
+            </div>
+
+            <!-- 卡名颜色 -->
+            <div class="field">
+              <label class="field-label">卡名颜色</label>
+              <div class="color-row">
+                <el-color-picker v-model="formData.color" size="default" @change="updateCard" />
+                <el-checkbox
+                  v-if="showNameGradient"
+                  v-model="formData.gradient"
+                  style="margin-left: 8px"
+                  @change="updateCard"
+                >
+                  渐变
+                </el-checkbox>
+                <span class="color-tip">（自动选择清空）</span>
+              </div>
+            </div>
+
+            <!-- 渐变色 -->
+            <template v-if="showNameGradient && formData.gradient">
+              <div class="field-row">
+                <div class="field field-half">
+                  <label class="field-label">渐变色1</label>
+                  <el-color-picker v-model="formData.gradientColor1" size="default" @change="updateCard" />
+                </div>
+                <div class="field field-half">
+                  <label class="field-label">渐变色2</label>
+                  <el-color-picker v-model="formData.gradientColor2" size="default" @change="updateCard" />
+                </div>
+              </div>
+            </template>
+
+            <!-- 对齐：el-radio-group 与参考站一致 -->
+            <div v-if="showNameAlign" class="field">
+              <label class="field-label">卡名对齐</label>
+              <el-radio-group v-model="formData.align" @change="updateCard">
+                <el-radio-button
+                  v-for="opt in alignOptions"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
+                  <span class="align-icon" :class="'align-' + opt.value" />
+                  {{ opt.label }}
+                </el-radio-button>
+              </el-radio-group>
+            </div>
+
+            <!-- 类型：el-radio-group 与参考站一致 -->
+            <div v-if="showCardAttr" class="field">
+              <label class="field-label">类型</label>
+              <el-radio-group v-model="formData.type" @change="setCardType">
+                <el-radio-button
+                  v-for="opt in cardTypeChoices"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
+                  {{ opt.label }}
+                </el-radio-button>
+              </el-radio-group>
+            </div>
+
+            <!-- 属性：下拉选择（8项太多，radio-group放不下） -->
+            <div v-if="showAttribute" class="field">
+              <label class="field-label">属性</label>
+              <el-select
+                v-model="formData.attribute"
                 size="default"
                 style="width: 100%"
                 @change="updateCard"
-              />
-              <span class="hint">?:-1, ∞:-2</span>
-            </div>
-          </div>
-
-          <!-- MAX ATK -->
-          <div v-if="showMaximumAtk" class="field">
-            <label class="field-label">MAX ATK</label>
-            <el-input-number
-              v-model="formData.maximumAtk"
-              :min="0"
-              size="default"
-              @change="updateCard"
-            />
-          </div>
-
-          <!-- ATK/DEF 栏 -->
-          <div v-if="showAtkBar" class="field">
-            <label class="field-label">ATK栏</label>
-            <el-switch v-model="formData.atkBar" @change="updateCard" />
-          </div>
-
-          <!-- 连接箭头 -->
-          <div v-if="showLinkArrows" class="field field-block">
-            <label class="field-label">连接标记</label>
-            <div class="arrow-grid">
-              <div
-                v-for="cell in arrowCells"
-                :key="cell.key"
-                class="arrow-cell"
-                :class="{
-                  active: cell.value && formData.arrowList.includes(cell.value),
-                  'arrow-cell--center': cell.center,
-                }"
-                :style="cell.center ? { visibility: 'hidden' } : {}"
-                @click="cell.value ? toggleArrow(cell.value) : undefined"
               >
-                <svg
-                  v-if="cell.icon"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  class="arrow-svg"
-                  :style="{ transform: 'rotate(' + cell.rotate + 'deg)' }"
-                >
-                  <polygon points="12,2 18,10 14,10 14,18 10,18 10,10 6,10" fill="currentColor" />
-                </svg>
-              </div>
+                <el-option
+                  v-for="opt in attributeOptions"
+                  :key="opt.value || 'none'"
+                  :label="opt.label"
+                  :value="opt.value"
+                />
+              </el-select>
             </div>
-          </div>
 
-          <!-- 灵摆描述 -->
-          <div v-if="showPendulumDesc" class="field">
-            <label class="field-label">灵摆描述</label>
-            <el-input
-              v-model="formData.pendulumDescription"
-              type="textarea"
-              :rows="2"
-              size="default"
-              placeholder="输入灵摆效果描述"
-              @input="scheduleUpdate()"
-            />
-          </div>
-
-          <!-- 效果描述 (含 inline 开关) -->
-          <div v-if="showDesc" class="field field-effect">
-            <div class="effect-header">
-              <label class="field-label">效果</label>
-              <div class="switch-group">
-                <div class="switch-item">
-                  <el-switch v-model="formData.firstLineCompress" size="small" @change="updateCard" />
-                  <span>首行压缩</span>
-                  <el-switch v-model="formData.descriptionAlign" size="small" @change="updateCard" />
-                  <span>文本居中</span>
+            <!-- 卡图（图片上传/URL输入） -->
+            <div v-if="showImage" class="field field-block">
+              <label class="field-label">卡图</label>
+              <div class="image-upload">
+                <div v-if="formData.image" class="image-preview">
+                  <img :src="formData.image" class="preview-img" @error="onImageError">
+                  <el-button
+                    size="small"
+                    type="danger"
+                    circle
+                    :icon="Close"
+                    class="remove-btn"
+                    @click="clearImage"
+                  />
+                </div>
+                <div class="image-actions">
+                  <el-upload
+                    :auto-upload="false"
+                    :show-file-list="false"
+                    accept="image/*"
+                    class="upload-trigger"
+                    @change="onFileUpload"
+                  >
+                    <el-button size="small">选择图片</el-button>
+                  </el-upload>
+                  <el-input
+                    v-model="imageUrl"
+                    size="small"
+                    placeholder="或输入图片URL"
+                    clearable
+                    style="flex: 1; min-width: 0"
+                    @keyup.enter="setImageUrl"
+                  />
+                  <el-button size="small" :icon="Link" @click="setImageUrl">确定</el-button>
                 </div>
               </div>
             </div>
-            <el-input
-              v-model="formData.description"
-              type="textarea"
-              :rows="3"
-              size="default"
-              placeholder="输入卡片效果描述"
-              @input="scheduleUpdate()"
-            />
-          </div>
 
-          <!-- 字号 / 字重 -->
-          <div v-if="showDesc" class="field field-slider">
-            <label class="field-label">字号</label>
-            <div class="slider-wrap">
-              <el-slider
-                v-model="formData.descriptionZoom"
-                :min="0.5"
-                :max="1.5"
-                :step="0.02"
-                @input="updateCard"
-              />
-              <span class="slider-val">{{ formData.descriptionZoom.toFixed(2) }}</span>
-            </div>
-          </div>
-          <div v-if="showDesc" class="field field-slider">
-            <label class="field-label">字重</label>
-            <div class="slider-wrap">
-              <el-slider
-                v-model="formData.descriptionWeight"
-                :min="0"
-                :max="1"
-                :step="0.1"
-                @input="scheduleUpdate()"
-              />
-              <span class="slider-val">{{ formData.descriptionWeight }}</span>
-            </div>
-          </div>
-
-          <!-- 描述格式 (已合并到效果描述里) -->
-
-          <!-- 高级：卡包 / 密码 -->
-          <!-- 卡包 / 密码：参考参考站，卡包独占一行，密码独占一行且带搜索按钮 -->
-          <div v-if="showPackage" class="field">
-            <label class="field-label">卡包</label>
-            <el-input
-              v-model="formData.package"
-              size="default"
-              placeholder="例：SD25-SC001"
-              @input="scheduleUpdate()"
-            />
-          </div>
-          <div v-if="showPassword" class="field">
-            <label class="field-label">密码</label>
-            <el-input
-              v-model="formData.password"
-              size="default"
-              placeholder="8位数字"
-              @input="scheduleUpdate()"
-            />
-          </div>
-
-          <!-- 版权 / 罕贵 -->
-          <div v-if="showCopyright" class="field">
-            <label class="field-label">版权</label>
-            <el-select
-              v-model="formData.copyright"
-              size="default"
-              clearable
-              placeholder="无"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="英文 (EN)" value="en" />
-              <el-option label="日文 (JP)" value="jp" />
-              <el-option label="简体 (SC)" value="sc" />
-            </el-select>
-          </div>
-          <div v-if="showRare" class="field">
-            <label class="field-label">罕贵</label>
-            <el-select
-              v-model="formData.rare"
-              size="default"
-              clearable
-              placeholder="无"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="DT" value="dt" />
-              <el-option label="UR" value="ur" />
-              <el-option label="GR" value="gr" />
-              <el-option label="HR" value="hr" />
-              <el-option label="MR" value="mr" />
-              <el-option label="KC" value="kc" />
-              <el-option label="CR" value="cr" />
-              <el-option label="ESR" value="esr" />
-              <el-option label="SER" value="ser" />
-              <el-option label="GSER" value="gser" />
-              <el-option label="PSER" value="pser" />
-            </el-select>
-          </div>
-
-          <!-- 防伪标 -->
-          <div v-if="showLaser" class="field">
-            <label class="field-label">防伪标</label>
-            <el-select
-              v-model="formData.laser"
-              size="default"
-              clearable
-              placeholder="无"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="样式一" value="laser1" />
-              <el-option label="样式二" value="laser2" />
-              <el-option label="样式三" value="laser3" />
-              <el-option label="样式四" value="laser4" />
-            </el-select>
-          </div>
-
-          <!-- 水印：参考参考站，目前渲染层未实现 drawWatermark，但保留字段便于未来兼容 -->
-          <div v-if="showLaser" class="field">
-            <label class="field-label">水印</label>
-            <el-select
-              v-model="formData.watermark"
-              size="default"
-              clearable
-              placeholder="无"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="无" value="" />
-              <el-option label="sample" value="sample" />
-              <el-option label="sample2" value="sample2" />
-              <el-option label="secret" value="secret" />
-            </el-select>
-          </div>
-
-          <!-- 周年 -->
-          <div v-if="showTwentieth" class="field">
-            <label class="field-label">周年</label>
-            <el-select
-              v-model="formData.twentieth"
-              size="default"
-              clearable
-              placeholder="无"
-              style="width: 100%"
-              @change="updateCard"
-            >
-              <el-option label="20周年" value="twentieth" />
-              <el-option label="25周年" value="twentyfive" />
-            </el-select>
-          </div>
-
-          <!-- 导出缩放 -->
-          <div class="field field-slider">
-            <label class="field-label">导出缩放</label>
-            <div class="slider-wrap">
-              <el-slider
-                v-model="formData.exportScale"
-                :min="0.1"
-                :max="1"
-                :step="0.1"
-                @input="updateCard"
-              />
-              <span class="slider-val">{{ formData.exportScale }}</span>
-            </div>
-          </div>
-
-          <!-- 圆角 / 出框：参考参考站布局，单独两项 -->
-          <div v-if="showRadius" class="field">
-            <label class="field-label">圆角</label>
-            <el-switch v-model="formData.radius" @change="updateCard" />
-          </div>
-          <div v-if="showLegend" class="field">
-            <label class="field-label">传说卡</label>
-            <el-switch v-model="formData.legend" @change="updateCard" />
-          </div>
-
-          <!-- 卡背特殊参数 -->
-          <template v-if="isYugiohBack">
-            <div class="field">
-              <label class="field-label">卡背类型</label>
+            <!-- 怪兽类型 -->
+            <div v-if="showMonsterType" class="field">
+              <label class="field-label">卡类</label>
               <el-select
-                v-model="formData.type"
+                v-model="formData.cardType"
+                size="default"
+                style="width: 100%"
+                @change="onCardTypeChange"
+              >
+                <el-option label="通常" value="normal" />
+                <el-option label="效果" value="effect" />
+                <el-option label="仪式" value="ritual" />
+                <el-option label="融合" value="fusion" />
+                <el-option label="同调" value="synchro" />
+                <el-option label="超量" value="xyz" />
+                <el-option label="连接" value="link" />
+              </el-select>
+            </div>
+
+            <!-- 灵摆类型 -->
+            <div v-if="showPendulumType" class="field">
+              <label class="field-label">灵摆类型</label>
+              <el-select
+                v-model="formData.pendulumType"
                 size="default"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="通常" value="normal" />
+                <el-option label="通常灵摆" value="normal-pendulum" />
+                <el-option label="效果灵摆" value="effect-pendulum" />
+                <el-option label="仪式灵摆" value="ritual-pendulum" />
+                <el-option label="融合灵摆" value="fusion-pendulum" />
+                <el-option label="同调灵摆" value="synchro-pendulum" />
+                <el-option label="超量灵摆" value="xyz-pendulum" />
+                <el-option label="连接灵摆" value="link-pendulum" />
               </el-select>
             </div>
-            <div class="field">
-              <label class="field-label">Logo</label>
+
+            <!-- 怪兽图标 -->
+            <div v-if="showMonsterIcon" class="field">
+              <label class="field-label">图标</label>
               <el-select
-                v-model="formData.logo"
+                v-model="formData.icon"
                 size="default"
                 clearable
                 placeholder="无"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="OCG" value="ocg" />
-                <el-option label="TCG" value="tcg" />
-                <el-option label="RD" value="rd" />
+                <el-option label="装备" value="equip" />
+                <el-option label="场地" value="field" />
+                <el-option label="速攻" value="quick-play" />
+                <el-option label="仪式" value="ritual" />
+                <el-option label="永续" value="continuous" />
+                <el-option label="反击" value="counter" />
               </el-select>
             </div>
-            <div class="field">
-              <label class="field-label">卡背选项</label>
+
+            <!-- 星级 / 阶级 -->
+            <div v-if="showLevel || showRank" class="field">
+              <label class="field-label">{{ showRank ? '阶级' : '星级' }}</label>
+              <el-input-number
+                v-model="formData.level"
+                :min="0"
+                :max="13"
+                size="default"
+                @change="updateCard"
+              />
+            </div>
+
+            <!-- 灵摆刻度 -->
+            <div v-if="showPendulumScale" class="field">
+              <label class="field-label">灵摆刻度</label>
+              <el-input-number
+                v-model="formData.pendulumScale"
+                :min="0"
+                :max="13"
+                size="default"
+                @change="updateCard"
+              />
+            </div>
+
+            <!-- 种族 / 类型 -->
+            <div v-if="showMonsterTypeText" class="field">
+              <label class="field-label">种族</label>
+              <el-input
+                v-model="formData.monsterType"
+                size="default"
+                placeholder="例：龙/通常"
+                clearable
+                @input="scheduleUpdate()"
+              />
+            </div>
+
+            <!-- ATK / DEF -->
+            <div v-if="showAtk" class="field">
+              <label class="field-label">ATK</label>
+              <div class="input-with-hint">
+                <el-input-number
+                  v-model="formData.atk"
+                  :min="-2"
+                  size="default"
+                  style="width: 100%"
+                  @change="updateCard"
+                />
+                <span class="hint">?:-1, ∞:-2</span>
+              </div>
+            </div>
+            <div v-if="showDef" class="field">
+              <label class="field-label">DEF</label>
+              <div class="input-with-hint">
+                <el-input-number
+                  v-model="formData.def"
+                  :min="-2"
+                  size="default"
+                  style="width: 100%"
+                  @change="updateCard"
+                />
+                <span class="hint">?:-1, ∞:-2</span>
+              </div>
+            </div>
+
+            <!-- MAX ATK -->
+            <div v-if="showMaximumAtk" class="field">
+              <label class="field-label">MAX ATK</label>
+              <el-input-number
+                v-model="formData.maximumAtk"
+                :min="0"
+                size="default"
+                @change="updateCard"
+              />
+            </div>
+
+            <!-- ATK/DEF 栏 -->
+            <div v-if="showAtkBar" class="field">
+              <label class="field-label">ATK栏</label>
+              <el-switch v-model="formData.atkBar" @change="updateCard" />
+            </div>
+
+            <!-- 连接箭头 -->
+            <div v-if="showLinkArrows" class="field field-block">
+              <label class="field-label">连接标记</label>
+              <div class="arrow-grid">
+                <div
+                  v-for="cell in arrowCells"
+                  :key="cell.key"
+                  class="arrow-cell"
+                  :class="{
+                    active: cell.value && formData.arrowList.includes(cell.value),
+                    'arrow-cell--center': cell.center,
+                  }"
+                  :style="cell.center ? { visibility: 'hidden' } : {}"
+                  @click="cell.value ? toggleArrow(cell.value) : undefined"
+                >
+                  <svg
+                    v-if="cell.icon"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    class="arrow-svg"
+                    :style="{ transform: 'rotate(' + cell.rotate + 'deg)' }"
+                  >
+                    <polygon points="12,2 18,10 14,10 14,18 10,18 10,10 6,10" fill="currentColor" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- 灵摆描述 -->
+            <div v-if="showPendulumDesc" class="field">
+              <label class="field-label">灵摆描述</label>
+              <el-input
+                v-model="formData.pendulumDescription"
+                type="textarea"
+                :rows="2"
+                size="default"
+                placeholder="输入灵摆效果描述"
+                clearable
+                @input="scheduleUpdate()"
+              />
+            </div>
+
+            <!-- 效果描述 (含 inline 开关) -->
+            <div v-if="showDesc" class="field field-effect">
+              <div class="effect-header">
+                <label class="field-label">效果</label>
+                <div class="switch-group">
+                  <div class="switch-item">
+                    <el-switch v-model="formData.firstLineCompress" size="small" @change="updateCard" />
+                    <span>首行压缩</span>
+                    <el-switch v-model="formData.descriptionAlign" size="small" @change="updateCard" />
+                    <span>文本居中</span>
+                  </div>
+                </div>
+              </div>
+              <el-input
+                v-model="formData.description"
+                type="textarea"
+                :rows="3"
+                size="default"
+                placeholder="输入卡片效果描述"
+                clearable
+                @input="scheduleUpdate()"
+              />
+            </div>
+
+            <!-- 字号 / 字重 -->
+            <div v-if="showDesc" class="field field-slider">
+              <label class="field-label">字号</label>
+              <div class="slider-wrap">
+                <el-slider
+                  v-model="formData.descriptionZoom"
+                  :min="0.5"
+                  :max="1.5"
+                  :step="0.02"
+                  @input="updateCard"
+                />
+                <span class="slider-val">{{ formData.descriptionZoom.toFixed(2) }}</span>
+              </div>
+            </div>
+            <div v-if="showDesc" class="field field-slider">
+              <label class="field-label">字重</label>
+              <div class="slider-wrap">
+                <el-slider
+                  v-model="formData.descriptionWeight"
+                  :min="0"
+                  :max="1"
+                  :step="0.1"
+                  @input="scheduleUpdate()"
+                />
+                <span class="slider-val">{{ formData.descriptionWeight }}</span>
+              </div>
+            </div>
+
+            <!-- 描述格式 (已合并到效果描述里) -->
+
+            <!-- 高级：卡包 / 密码 -->
+            <!-- 卡包 / 密码：参考参考站，卡包独占一行，密码独占一行且带搜索按钮 -->
+            <div v-if="showPackage" class="field">
+              <label class="field-label">卡包</label>
+              <el-input
+                v-model="formData.package"
+                size="default"
+                placeholder="例：SD25-SC001"
+                clearable
+                @input="scheduleUpdate()"
+              />
+            </div>
+            <div v-if="showPassword" class="field">
+              <label class="field-label">密码</label>
+              <div class="password-row">
+                <el-input
+                  v-model="formData.password"
+                  size="default"
+                  placeholder="8位数字"
+                  clearable
+                  @input="scheduleUpdate()"
+                  @keyup.enter="searchPassword"
+                />
+                <el-button
+                  type="primary"
+                  size="default"
+                  :loading="searchLoading"
+                  @click="searchPassword"
+                >
+                  搜索
+                </el-button>
+              </div>
+            </div>
+            <div v-if="showPassword" class="field">
+              <label class="field-label">译名</label>
+              <el-select
+                v-model="nameSource"
+                size="small"
+                style="width: 100%"
+              >
+                <el-option label="YGOPro 译名" value="cn" />
+                <el-option label="简中官方译名" value="sc" />
+                <el-option label="Master Duel 译名" value="md" />
+                <el-option label="NWBBS 译名" value="nwbbs" />
+                <el-option label="CNOCG 译名" value="cnocg" />
+              </el-select>
+            </div>
+            <div v-if="showPassword" class="field">
+              <label class="field-label">卡名搜索</label>
+              <div class="password-row">
+                <el-input
+                  v-model="nameSearchKeyword"
+                  size="default"
+                  placeholder="按卡名搜索"
+                  clearable
+                  @keyup.enter="searchByName"
+                />
+                <el-button
+                  type="primary"
+                  size="default"
+                  :loading="nameSearchLoading"
+                  @click="searchByName"
+                >
+                  搜索
+                </el-button>
+              </div>
+            </div>
+
+            <!-- 版权 / 罕贵 -->
+            <div v-if="showCopyright" class="field">
+              <label class="field-label">版权</label>
+              <el-select
+                v-model="formData.copyright"
+                size="default"
+                clearable
+                placeholder="无"
+                style="width: 100%"
+                @change="updateCard"
+              >
+                <el-option label="英文 (EN)" value="en" />
+                <el-option label="日文 (JP)" value="jp" />
+                <el-option label="简体 (SC)" value="sc" />
+              </el-select>
+            </div>
+            <div v-if="showRare" class="field">
+              <label class="field-label">罕贵</label>
+              <el-select
+                v-model="formData.rare"
+                size="default"
+                clearable
+                placeholder="无"
+                style="width: 100%"
+                @change="updateCard"
+              >
+                <el-option label="DT" value="dt" />
+                <el-option label="UR" value="ur" />
+                <el-option label="GR" value="gr" />
+                <el-option label="HR" value="hr" />
+                <el-option label="MR" value="mr" />
+                <el-option label="KC" value="kc" />
+                <el-option label="CR" value="cr" />
+                <el-option label="ESR" value="esr" />
+                <el-option label="SER" value="ser" />
+                <el-option label="GSER" value="gser" />
+                <el-option label="PSER" value="pser" />
+              </el-select>
+            </div>
+
+            <!-- 防伪标 -->
+            <div v-if="showLaser" class="field">
+              <label class="field-label">防伪标</label>
+              <el-select
+                v-model="formData.laser"
+                size="default"
+                clearable
+                placeholder="无"
+                style="width: 100%"
+                @change="updateCard"
+              >
+                <el-option label="样式一" value="laser1" />
+                <el-option label="样式二" value="laser2" />
+                <el-option label="样式三" value="laser3" />
+                <el-option label="样式四" value="laser4" />
+              </el-select>
+            </div>
+
+
+
+            <!-- 周年 -->
+            <div v-if="showTwentieth" class="field">
+              <label class="field-label">周年</label>
+              <el-select
+                v-model="formData.twentieth"
+                size="default"
+                clearable
+                placeholder="无"
+                style="width: 100%"
+                @change="updateCard"
+              >
+                <el-option label="20周年" value="twentieth" />
+                <el-option label="25周年" value="twentyfive" />
+              </el-select>
+            </div>
+
+            <!-- 圆角 / 出框：参考参考站布局，单独两项 -->
+            <div v-if="showRadius" class="field">
+              <label class="field-label">圆角</label>
+              <el-switch v-model="formData.radius" @change="updateCard" />
+            </div>
+            <div v-if="showLegend" class="field">
+              <label class="field-label">传说卡</label>
+              <el-switch v-model="formData.legend" @change="updateCard" />
+            </div>
+
+            <!-- 卡背特殊参数 -->
+            <template v-if="isYugiohBack">
+              <div class="field">
+                <label class="field-label">卡背类型</label>
+                <el-select
+                  v-model="formData.type"
+                  size="default"
+                  style="width: 100%"
+                  @change="updateCard"
+                >
+                  <el-option label="通常" value="normal" />
+                </el-select>
+              </div>
+              <div class="field">
+                <label class="field-label">Logo</label>
+                <el-select
+                  v-model="formData.logo"
+                  size="default"
+                  clearable
+                  placeholder="无"
+                  style="width: 100%"
+                  @change="updateCard"
+                >
+                  <el-option label="OCG" value="ocg" />
+                  <el-option label="TCG" value="tcg" />
+                  <el-option label="RD" value="rd" />
+                </el-select>
+              </div>
+              <div class="field">
+                <label class="field-label">卡背选项</label>
+                <div class="switch-group">
+                  <div class="switch-item">
+                    <el-switch v-model="formData.konami" @change="updateCard" />
+                    <span>Konami</span>
+                  </div>
+                  <div class="switch-item">
+                    <el-switch v-model="formData.register" @change="updateCard" />
+                    <span>注册商标</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- 场地卡特殊参数 -->
+            <div v-if="isFieldCenter" class="field">
+              <label class="field-label">场地选项</label>
               <div class="switch-group">
                 <div class="switch-item">
-                  <el-switch v-model="formData.konami" @change="updateCard" />
-                  <span>Konami</span>
-                </div>
-                <div class="switch-item">
-                  <el-switch v-model="formData.register" @change="updateCard" />
-                  <span>注册商标</span>
+                  <el-switch v-model="formData.cardBack" @change="updateCard" />
+                  <span>卡背模式</span>
                 </div>
               </div>
             </div>
-          </template>
 
-          <!-- 场地卡特殊参数 -->
-          <div v-if="isFieldCenter" class="field">
-            <label class="field-label">场地选项</label>
-            <div class="switch-group">
-              <div class="switch-item">
-                <el-switch v-model="formData.cardBack" @change="updateCard" />
-                <span>卡背模式</span>
+            <!-- JSON 编辑器 -->
+            <details class="json-section">
+              <summary>高级</summary>
+              <div class="field field-slider" style="margin-top: 8px">
+                <label class="field-label">导出缩放</label>
+                <div class="slider-wrap">
+                  <el-slider
+                    v-model="formData.exportScale"
+                    :min="0.1"
+                    :max="3"
+                    :step="0.1"
+                    @input="updateCard"
+                  />
+                  <span class="slider-val">{{ formData.exportScale }}</span>
+                </div>
               </div>
-            </div>
+              <json-editor-vue
+                v-model="jsonData"
+                style="width: 100%; height: 300px"
+                mode="text"
+                v-bind="jsonOption"
+              />
+            </details>
           </div>
-
-          <!-- JSON 编辑器 -->
-          <details class="json-section">
-            <summary>高级 JSON 编辑</summary>
-            <json-editor-vue
-              v-model="jsonData"
-              style="width: 100%; height: 300px"
-              mode="text"
-              v-bind="jsonOption"
-            />
-          </details>
         </div>
       </div>
     </div>
+    <footer class="site-footer">
+      Powered by <a href="https://ygocdb.com/" target="_blank" rel="noopener">ygocdb.com</a> · <a href="http://www.ygotoken.com/" target="_blank" rel="noopener">ygotoken.com</a> · <a href="https://github.com/kooriookami/yugioh-card" target="_blank" rel="noopener">GitHub</a>
+    </footer>
   </div>
 </template>
 
 <script setup>
 import {
   Close,
+  Coin,
   Download,
   Link,
   PictureFilled,
@@ -674,7 +734,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from '@element-plus/icons-vue';
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, toRaw, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { FieldCenterCard, RushDuelCard, YugiohBackCard, YugiohCard, YugiohSeries2Card } from 'yugioh-card';
 import JsonEditorVue from 'json-editor-vue';
@@ -774,6 +834,12 @@ const showImage = computed(() => !isYugiohBack.value && !isFieldCenter.value);
 const showLinkArrows = computed(() => isYugioh.value && formData.type === 'monster' && formData.cardType === 'link');
 
 const imageUrl = ref('');
+const searchLoading = ref(false);
+const randomLoading = ref(false);
+const nameSearchKeyword = ref('');
+const nameSearchLoading = ref(false);
+const cardCid = ref(null);
+const nameSource = ref('cn'); // cn=YGOPro, sc=官方简中, md=Master Duel
 
 // 参考站 3x3 格子：↖ ↑ ↗ / ← □ → / ↙ ↓ ↘，中间隐藏
 const arrowCells = [
@@ -928,7 +994,7 @@ const updateCard = () => {
   }
   if (cardLeaf.value) {
     // toRaw 确保将 reactive proxy 转为纯对象传入，避免 Leafer 内部 Proxy 干扰
-    cardLeaf.value.setData({ ...formData });
+    cardLeaf.value.setData({ ...toRaw(formData) });
     // 强制同步缩放，确保渲染刷新
     if (cardLeaf.value.updateScale) {
       cardLeaf.value.updateScale();
@@ -1014,7 +1080,7 @@ const syncCardViewSize = () => {
 // 仅更新画布，不刷新 JSON 编辑器（用于缩放等仅改视图的操作）
 const updateCanvasOnly = () => {
   if (cardLeaf.value) {
-    cardLeaf.value.setData({ ...formData });
+    cardLeaf.value.setData({ ...toRaw(formData) });
   }
   syncCardViewSize();
 };
@@ -1076,6 +1142,196 @@ const toggleArrow = val => {
   updateCard();
 };
 
+// ──────────────────────────────────────────────
+// 随机生成（百鸽 API 待定，先用 ygotoken 缓存取 id）
+// ──────────────────────────────────────────────
+const randomGenerate = async () => {
+  randomLoading.value = true;
+  try {
+    const cache = await loadYgotokenCache();
+    const card = cache[Math.floor(Math.random() * cache.length)];
+    formData.password = String(card.id);
+    await searchPassword();
+  } catch {
+    ElMessage.error('随机生成失败，请重试');
+  } finally {
+    randomLoading.value = false;
+  }
+};
+
+// ──────────────────────────────────────────────
+// 密码搜索：调用 ygocdb.com API 自动填充卡片数据
+// ──────────────────────────────────────────────
+const RACE_CN = {
+  1: '战士族', 2: '魔法师族', 4: '天使族', 8: '恶魔族',
+  16: '不死族', 32: '机械族', 64: '水族', 128: '炎族',
+  256: '岩石族', 512: '鸟兽族', 1024: '植物族', 2048: '昆虫族',
+  4096: '雷族', 8192: '龙族', 16384: '兽族', 32768: '兽战士族',
+  65536: '恐龙族', 131072: '鱼族', 262144: '海龙族', 524288: '爬虫类族',
+  1048576: '念动力族', 2097152: '幻龙族', 4194304: '电子界族', 8388608: '幻神兽族',
+  16777216: '电子界族', // ygotoken 编码
+};
+const ATTR_KEY = { 1: 'earth', 2: 'water', 4: 'fire', 8: 'wind', 16: 'light', 32: 'dark', 64: 'divine' };
+
+const parseOcgType = code => {
+  if (code & 0x2) return { type: 'spell', labels: [] };
+  if (code & 0x4) return { type: 'trap', labels: [] };
+  const result = { type: 'monster', labels: [], cardType: '' };
+  if (code & 0x1000000) result.type = 'pendulum';
+  if (code & 0x1000) result.labels.push('协调');
+  if (code & 0x200) result.labels.push('灵魂');
+  if (code & 0x400) result.labels.push('同盟');
+  if (code & 0x800) result.labels.push('二重');
+  if (code & 0x8000) result.labels.push('卡通');
+  if (code & 0x200000) result.labels.push('反转');
+  if (code & 0x4000000) { result.labels.push('连接'); result.cardType = 'link'; }
+  else if (code & 0x800000) { result.labels.push('超量'); result.cardType = 'xyz'; }
+  else if (code & 0x2000) { result.labels.push('同调'); result.cardType = 'synchro'; }
+  else if (code & 0x40) { result.labels.push('融合'); result.cardType = 'fusion'; }
+  else if (code & 0x80) { result.labels.push('仪式'); result.cardType = 'ritual'; }
+  if (code & 0x20 || result.labels.length) { result.labels.push('效果'); result.cardType = result.cardType || 'effect'; }
+  else { result.labels.push('通常'); result.cardType = 'normal'; }
+  return result;
+};
+
+// 加载 ygotoken 全量卡片缓存（仅用于 cid→卡图 和 补充译名）
+let ygotokenCache = null;
+const loadYgotokenCache = async () => {
+  if (ygotokenCache) return ygotokenCache;
+  const url = import.meta.env.DEV ? '/ygotoken-api/api/cards' : 'http://www.ygotoken.com/api/cards';
+  const resp = await fetch(url);
+  const data = await resp.json();
+  ygotokenCache = data;
+  return data;
+};
+
+const searchPassword = async () => {
+  const pwd = (formData.password || '').trim();
+  if (!pwd) { ElMessage.warning('请先输入卡密'); return; }
+  if (!/^\d{6,8}$/.test(pwd)) { ElMessage.warning('卡密应为 6-8 位数字'); return; }
+  searchLoading.value = true;
+  try {
+    // 主数据源：百鸽 API ?show=all（顶层含全译名 + text.types 含箭头）
+    const ygocdbResp = await fetch(`https://ygocdb.com/api/v0/card/${pwd}?show=all`, { cache: 'no-cache' });
+    const ygocdb = await ygocdbResp.json();
+    if (!ygocdb?.data) { ElMessage.warning('未找到该卡密'); return; }
+
+    const ocgData = ygocdb.data;
+    const textData = ygocdb.text || {};
+    const { type: mainType, labels, cardType: subType } = parseOcgType(ocgData.type);
+    const raceName = RACE_CN[ocgData.race] || '';
+    const attrKey = ATTR_KEY[ocgData.attribute] || '';
+    const hasPendulum = mainType === 'pendulum';
+    const raceText = raceName ? (
+      hasPendulum
+        ? `${raceName}/${labels.filter(l => l !== '效果' && l !== '通常').join('/')}${labels.some(l => l !== '通常') ? '/灵摆/' : '/'}${labels.includes('通常') ? '通常' : '效果'}`.replace(/\/+/g, '/')
+        : `${raceName}/${labels.join('/')}`
+    ) : '';
+
+    // 译名：?show=all 在顶层提供全译名
+    const nameMap = {
+      cn: ygocdb.cn_name || ygocdb.cnocg_n || ygocdb.nwbbs_n,
+      nwbbs: ygocdb.nwbbs_n,
+      cnocg: ygocdb.cnocg_n,
+      sc: ygocdb.sc_name,
+      md: ygocdb.md_name,
+    };
+    formData.name = nameMap[nameSource.value] || ygocdb.cn_name || ygocdb.sc_name || '';
+    // 卡图：从 ygotoken 缓存获取 cid
+    cardCid.value = ygocdb.cid || null;
+    if (!cardCid.value) {
+      try {
+        const cache = await loadYgotokenCache();
+        const ygocard = cache.find(c => String(c.id) === pwd);
+        if (ygocard) cardCid.value = ygocard.cid || null;
+      } catch { /* 忽略 */ }
+    }
+    formData.type = mainType;
+    formData.cardType = subType;
+    formData.attribute = attrKey;
+    const rawLevel = ocgData.level;
+    if (subType === 'xyz') {
+      formData.rank = rawLevel;
+      formData.level = 0;
+    } else if (subType === 'link') {
+      formData.level = rawLevel & 0xFF;
+      formData.rank = 0;
+      // 从 text.types 解析箭头标记，渲染层需要数字 1-8（顺序：上→右上→右→右下→下→左下→左→左上）
+      const arrowMap = { '↑': 1, '↗': 2, '→': 3, '↘': 4, '↓': 5, '↙': 6, '←': 7, '↖': 8 };
+      const typesStr = (textData.types || '');
+      formData.arrowList = [];
+      for (const [char, idx] of Object.entries(arrowMap)) {
+        if (typesStr.includes(`[${char}]`)) formData.arrowList.push(idx);
+      }
+    } else {
+      formData.level = rawLevel >= 0x10000 ? (rawLevel & 0xFF) : (rawLevel <= 13 ? rawLevel : 0);
+      formData.rank = 0;
+      formData.arrowList = [];
+    }
+    formData.monsterType = raceText;
+    formData.atk = ocgData.atk ?? 0;
+    formData.def = ocgData.def ?? 0;
+
+    // 魔法/陷阱：设置 logo 图标
+    const spellTrapIcons = { 0x80: 'ritual', 0x10000: 'quick-play', 0x20000: 'continuous', 0x40000: 'equip', 0x80000: 'field', 0x100000: 'counter' };
+    const iconKey = Object.keys(spellTrapIcons).find(k => ocgData.type & Number(k));
+    formData.icon = mainType === 'spell' || mainType === 'trap' ? (spellTrapIcons[iconKey] || '') : '';
+
+    // 灵摆卡拆分
+    const rawDesc = textData.desc || '';
+    const pendulumMatch = rawDesc.match(/【灵摆效果】\s*\n([\s\S]*?)(?:\n【怪兽(?:效果|信息)】|$)/);
+    const monsterMatch = rawDesc.match(/【怪兽(?:效果|信息)】\s*\n([\s\S]*)/);
+    if (mainType === 'pendulum' && pendulumMatch) {
+      formData.pendulumDescription = pendulumMatch[1].trim();
+      formData.description = (monsterMatch?.[1] || '').trim();
+    } else {
+      formData.pendulumDescription = '';
+      formData.description = rawDesc;
+    }
+    formData.atkBar = mainType === 'monster' || mainType === 'pendulum';
+    if (mainType === 'pendulum') {
+      formData.pendulumScale = (rawLevel >> 16) & 0xFF;
+      formData.pendulumType = `${subType !== 'normal' ? subType : 'effect'}-pendulum`;
+    }
+
+    // 卡图：ygotoken 的 WebP 高清艺术插画（1200×1200），通过 Vite 代理解决 CORS
+    if (cardCid.value) {
+      const imgPath = `/ygotoken-img/webp/${cardCid.value}.webp`;
+      formData.image = import.meta.env.DEV ? imgPath : `http://www.ygotoken.com/images/webp/${cardCid.value}.webp`;
+    } else {
+      formData.image = '';
+      ElMessage.warning('该卡片暂无卡图，可手动上传');
+    }
+
+    updateCard();
+    ElMessage.success(`随机一卡：${formData.name}`);
+  } catch (e) {
+    ElMessage.error('网络错误，搜索失败');
+    cardCid.value = null;
+  } finally {
+    searchLoading.value = false;
+  }
+};
+
+// 卡名搜索（百鸽 API）
+const searchByName = async () => {
+  const kw = nameSearchKeyword.value.trim();
+  if (!kw) { ElMessage.warning('请输入卡名'); return; }
+  nameSearchLoading.value = true;
+  try {
+    const resp = await fetch(`https://ygocdb.com/api/v0/?search=${encodeURIComponent(kw)}`);
+    const result = await resp.json();
+    if (!result?.result?.length) { ElMessage.warning('未找到匹配的卡片'); return; }
+    formData.password = String(result.result[0].id);
+    nameSearchKeyword.value = '';
+    await searchPassword();
+  } catch (e) {
+    ElMessage.error('网络错误，搜索失败');
+  } finally {
+    nameSearchLoading.value = false;
+  }
+};
+
 // JSON 编辑器 → 表单 单向同步（带防抖防止循环更新）
 let syncingFromJson = false;
 watch(() => jsonData.value, newVal => {
@@ -1116,9 +1372,17 @@ const autoPhonetic = () => {
 .yugioh-card-container {
   height: 100vh;
   display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: #f0f2f5;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+.main-row {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
 }
 
 // 左侧卡片预览区
@@ -1211,7 +1475,7 @@ const autoPhonetic = () => {
     flex: 1;
     padding: 8px 4px;
     text-align: center;
-    font-size: 13px;
+    font-size: 12px;
     color: #606266;
     cursor: pointer;
     border-radius: 6px;
@@ -1227,6 +1491,7 @@ const autoPhonetic = () => {
       background: var(--el-color-primary);
       color: #fff;
       box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
+      font-weight: 600;
     }
   }
 }
@@ -1240,6 +1505,23 @@ const autoPhonetic = () => {
 
 .form-inner {
   padding: 0 16px 16px;
+}
+
+// 页面底部 API 来源声明
+.site-footer {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #606266;
+  text-align: center;
+  border-top: 1px solid #e4e7ed;
+  background: #fff;
+
+  a {
+    color: var(--el-color-primary);
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
 }
 
 // 字段（标签在左，控件在右）
@@ -1303,6 +1585,21 @@ const autoPhonetic = () => {
   > *:not(.field-label) {
     flex: 1;
     min-width: 0;
+  }
+
+  // 密码行：输入 + 搜索按钮
+  .password-row {
+    display: flex;
+    gap: 6px;
+
+    .el-input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .el-button {
+      flex-shrink: 0;
+    }
   }
 
   .color-row {

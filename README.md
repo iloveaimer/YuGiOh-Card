@@ -16,13 +16,27 @@
   </a>
 </p>
 
-<p align="center">一个使用 Canvas 渲染游戏王卡片的工具，支持可视化表单编辑器与桌面应用打包</p>
+<p align="center">基于 Canvas 的游戏王可视化制卡器，支持 OCG 卡库检索、随机生成、高清卡图与桌面 EXE 打包</p>
 
 <p align="center">
   <img src="src/assets/image/banner.jpg">
 </p>
 
-目前有 5 种卡片：🚀🚀🚀🚀🚀
+## ✨ 特色功能
+
+| 功能 | 说明 |
+|------|------|
+| 🔍 **OCG 卡库检索** | 按卡密/卡名搜索，自动填充全部字段 |
+| 🎲 **随机一卡** | 全卡库随机抽取真实卡片 |
+| 🌐 **多译名** | YGOPro / 简中官方 / Master Duel / NWBBS / CNOCG |
+| 🖼️ **高清卡图** | 1200×1200 WebP 艺术插画 |
+| 🎨 **完整自定义** | 颜色/渐变/字体、类型/属性/星级/攻防、连接箭头、防伪标、罕贵 |
+| 📦 **一键导出** | JSON 导入/导出、高清 PNG（最高 3x） |
+| 🖥️ **桌面应用** | Windows EXE，独立运行 |
+
+> 卡片数据由 [ygocdb.com](https://ygocdb.com/) 提供，卡图由 [ygotoken.com](http://www.ygotoken.com/) 提供
+
+目前有 5 种卡片：
 
 - 1️⃣ 游戏王
 - 2️⃣ 超速决斗
@@ -48,57 +62,24 @@
 ### 仓库开发
 
 ```bash
-# Node.js 22+
 pnpm install
-pnpm dev            # Web 开发模式
-pnpm dev:electron   # Electron 桌面应用开发模式
-pnpm build          # Web 构建
-pnpm build:lib      # 库文件构建
-pnpm build:electron # Electron 构建
-pnpm build:exe      # 打包 Windows EXE 安装包
+pnpm dev            # Web 开发
+pnpm dev:electron   # Electron 桌面应用
+pnpm build:exe      # 打包 Windows EXE → release/
 ```
-
-### Electron 桌面应用
-
-支持打包为 Windows EXE 安装包，独立运行，无需浏览器。
-
-```bash
-pnpm dev:electron   # Electron 开发（含 DevTools）
-pnpm build:exe      # 打包 EXE，输出到 release/ 目录
-```
-
-### 可视化编辑器
-
-项目自带可视化表单编辑器，支持：
-
-- 5 种卡片类型切换与实时预览
-- 卡名颜色、渐变、字体（细隶书简/繁、华康隶书、楷体）
-- 图片上传（本地文件 / URL）
-- 连接箭头选择器
-- JSON 导入/导出（以卡名命名）
-- 缩放、导出高清 PNG
-
-启动方式：`pnpm dev` 或 `pnpm dev:electron`
 
 ### 浏览器
 
 ```js
-// 可选 YugiohCard, RushDuelCard, YugiohBackCard, FieldCenterCard, YugiohSeries2Card
 import { YugiohCard } from 'yugioh-card';
 
 const card = new YugiohCard({
-  view: 'xxx', // div 容器
-  data: {
-    ..., // 参数见下方 Data 属性
-  },
-  resourcePath: 'xxx', // 静态资源路径，把 src/assets/yugioh-card 文件夹复制到你的项目中或者服务器上
+  view: 'xxx',           // div 容器
+  data: { /* 参数见 Data 属性 */ },
+  resourcePath: 'xxx',   // 静态资源路径，复制 src/assets/yugioh-card 到项目或服务器
 });
-
-// 导出图片，更多导出参数请参考 https://www.leaferjs.com/ui/guide/basic/export.html
-card.leafer.export('xxx.png', {
-  screenshot: true,
-  pixelRatio: devicePixelRatio,
-});
+// 导出：card.leafer.export('xxx.png', { screenshot: true });
+```
 ```
 
 ### Node.js
