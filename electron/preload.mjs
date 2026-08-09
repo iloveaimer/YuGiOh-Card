@@ -8,5 +8,5 @@ import { contextBridge } from 'electron';
 contextBridge.exposeInMainWorld('__YG__', {
   resourcePath: process.env.VITE_DEV_SERVER_URL
     ? '/src/assets/yugioh-card'
-    : './assets/yugioh-card',
+    : './assets/src/assets/yugioh-card',
 });
