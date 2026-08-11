@@ -53,7 +53,7 @@
 
 ## 🚩 在线演示
 
-[在线演示](https://kooriookami.github.io/yugioh-card/)
+[在线演示](https://iloveaimer.github.io/YuGiOh-Card/)
 
 ## ⚡ 快速开始
 

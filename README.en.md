@@ -53,7 +53,7 @@ Currently there are 5 types of cards: 🚀🚀🚀🚀🚀
 
 ## 🚩 Online Demo
 
-[Online Demo](https://kooriookami.github.io/yugioh-card/)
+[Online Demo](https://iloveaimer.github.io/YuGiOh-Card/)
 
 ## ⚡ Quick Start
 
