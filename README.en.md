@@ -1,4 +1,4 @@
-<h1 align="center">🎉 Yu-Gi-Oh! Card - Yugioh Card 🎉</h1>
+<h1 align="center">🎉 Yu-Gi-Oh! Card - YuGiOh-Card 🎉</h1>
 
 <div align="center">
   <p><a href="./README.md">简体中文</a> | English</p>
@@ -48,11 +48,11 @@ Currently there are 5 types of cards: 🚀🚀🚀🚀🚀
 
 - [LeaferJS](https://www.leaferjs.com/) for the powerful graphics rendering capabilities
 - [白羽幸鳥](https://tieba.baidu.com/home/main?id=tb.1.d6c63ffd.3YV5T6Q9Z7uIeVVhPlo8hg%3Ft%3D1654573649) for providing high-resolution card templates
-- [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) for the original project
+- [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) — this project is forked and built upon their work
 
 ## 🚩 Online Demo
 
-[Online Demo](https://iloveaimer.github.io/YuGiOh-Card/)
+> [https://iloveaimer.github.io/YuGiOh-Card/](https://iloveaimer.github.io/YuGiOh-Card/)
 
 ## ⚡ Quick Start
 
@@ -106,26 +106,23 @@ Before running the Node.js example, make sure your local Node.js version is 22 o
 
 ```js
 import http from 'http';
+import path from 'path';
 import skia from 'skia-canvas';
 import { YugiohCard } from 'yugioh-card';
 
 http.createServer((req, res) => {
   const card = new YugiohCard({
-    data: {
-      ..., // see Data properties below
-    },
-    resourcePath: 'xxx', // path to static resources, copy src/assets/yugioh-card folder to your project or server
+    data: { /* see Data Properties below */ },
+    resourcePath: path.resolve('./src/assets/yugioh-card'),
     skia: skia,
   });
-  card.leafer.export('png', {
-    screenshot: true,
-  }).then(result => {
+  card.leafer.export('png', { screenshot: true }).then(result => {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.write(`<img src="${result.data}" />`);
     res.end();
   });
 }).listen(3000, () => {
-    console.log('server is running at http://localhost:3000');
+  console.log('server is running at http://localhost:3000');
 });
 ```
 
@@ -140,7 +137,7 @@ http.createServer((req, res) => {
 |    Property Name    |        Description        |  Type   |                                                       Options                                                       |                                                  Notes                                                  |      Default      |
 |:-------------------:|:-------------------------:|:-------:|:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------:|:-----------------:|
 |      language       |         Language          |  enum   |                                     'sc' / 'tc' / 'jp' / 'kr' / 'en' / 'astral'                                     |             Simplified Chinese / Traditional Chinese / Japanese / Korean / English / Astral             |       'sc'        |
-|        font         |           Font            |  enum   |                                 '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt'                                  |       Default / XLSJ / XLSF / HKLW7 / KT      |        ''         |
+|        font         |           Font            |  enum   |                   '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'                   |      Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2      |        ''         |
 |        name         |         Card Name         | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
 |        color        |      Card Name Color      | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
 |        align        |    Card Name Alignment    |  enum   |                                             'left' / 'center' / 'right'                                             |                                          Left / Center / Right                                          |      'left'       |
@@ -152,7 +149,7 @@ http.createServer((req, res) => {
 |        icon         |      Spell/Trap Icon      |  enum   |                       'equip' / 'field' / 'quick-play' / 'ritual' / 'continuous' / 'counter'                        |                       Equip / Field / Quick-Play / Ritual / Continuous / Counter                        |        ''         |
 |        image        |       Center Image        | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
 |      cardType       |         Card Type         |  enum   |                  'normal' / 'effect' / 'ritual' / 'fusion' / 'synchro' / 'xyz' / 'link' / 'token'                   |                    Normal / Effect / Ritual / Fusion / Synchro / XYZ / Link / Token                     |     'normal'      |
-|    pendulumType     |       Pendulum Type       |  enum   | 'normal-pendulum' / 'effect-pendulum' / 'ritual-pendulum' / 'fusion-pendulum' / 'synchro-pendulum' / 'xyz-pendulum' | Normal Pendulum / Effect Pendulum / Ritual Pendulum / Fusion Pendulum / Synchro Pendulum / XYZ Pendulum | 'normal-pendulum' |
+|    pendulumType     |       Pendulum Type       |  enum   | 'normal-pendulum' / 'effect-pendulum' / 'ritual-pendulum' / 'fusion-pendulum' / 'synchro-pendulum' / 'xyz-pendulum' / 'link-pendulum' | Normal / Effect / Ritual / Fusion / Synchro / XYZ / Link Pendulum | 'normal-pendulum' |
 |        level        |           Level           | number  |                                                          —                                                          |                                                    —                                                    |         0         |
 |        rank         |           Rank            | number  |                                                          —                                                          |                                                    —                                                    |         0         |
 |    pendulumScale    |      Pendulum Scale       | number  |                                                          —                                                          |                                                    —                                                    |         0         |
@@ -169,10 +166,10 @@ http.createServer((req, res) => {
 |  descriptionWeight  |    Effect Text Weight     | number  |                                                          —                                                          |                                                    —                                                    |         0         |
 |       package       |         Card Pack         | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
 |      password       |       Card Password       | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|      copyright      |         Copyright         |  enum   |                                                    '' / 'ocg'                                                     |               None / OCG               |        ''         |
-|        laser        |        Laser Mark         |  enum   |                                            '' / 'laser-gold' / 'laser-silver'                                            |               None / Gold / Silver              |        ''         |
-|        rare         |          Rarity           |  enum   |                       'hr' / 'ser' / 'gser' / 'pser' / 'ur' / 'sr' / 'r' / 'n' / 'npr'                       |      HR / SER / GSER / PSER / UR / SR / R / N / NPR      |        ''         |
-|      twentieth      |     20th Anniversary      | boolean |                                                          —                                                          |                                                    —                                                    |       false       |
+|      copyright      |         Copyright         |  enum   |                                            '' / 'en' / 'jp' / 'sc'                                            |               None / EN / JP / SC               |        ''         |
+|        laser        |        Laser Mark         |  enum   |                                  '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'                                   |               Style 1 / 2 / 3 / 4               |        ''         |
+|        rare         |          Rarity           |  enum   |                       'dt' / 'ur' / 'gr' / 'hr' / 'ser' / 'gser' / 'pser'                        |              DT / UR / GR / HR / SER / GSER / PSER              |        ''         |
+|      twentieth      |       Anniversary         | string  |                                         '' / 'twentieth' / 'twentyfive'                                         |               None / 20th / 25th               |        ''         |
 |       radius        |      Rounded Corners      | boolean |                                                          —                                                          |                                                    —                                                    |       true        |
 |        scale        |        Card Scale         | number  |                                                          —                                                          |                                                    —                                                    |         1         |
 
@@ -201,8 +198,8 @@ http.createServer((req, res) => {
 |      package      |      Card Pack      | string  |                                   —                                    |                             —                              |    ''     |
 |     password      |    Card Password    | string  |                                   —                                    |                             —                              |    ''     |
 |      legend       |      Legendary      | boolean |                                   —                                    |                             —                              |   false   |
-|       laser       |     Laser Mark      |  enum   |                '' / 'laser-gold' / 'laser-silver'                |       None / Gold / Silver       |    ''     |
-|       rare        |       Rarity        |  enum   | 'hr' / 'ser' / 'gser' / 'pser' / 'ur' / 'sr' / 'r' / 'n' / 'npr' | HR / SER / GSER / PSER / UR / SR / R / N / NPR |    ''     |
+|       laser       |     Laser Mark      |  enum   |              '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'               |      Style 1 / 2 / 3 / 4      |    ''     |
+|       rare        |       Rarity        |  enum   | 'dt' / 'ur' / 'gr' / 'hr' / 'mr' / 'kc' / 'cr' / 'esr' / 'ser' / 'gser' / 'pser' | DT / UR / GR / HR / MR / KC / CR / ESR / SER / GSER / PSER |    ''     |
 |      radius       |   Rounded Corners   | boolean |                                   —                                    |                             —                              |   true    |
 |       scale       |     Card Scale      | number  |                                   —                                    |                             —                              |     1     |
 
@@ -231,7 +228,7 @@ http.createServer((req, res) => {
 |   Property Name   |        Description        |  Type   |                                         Options                                          |                                   Notes                                    |  Default  |
 |:-----------------:|:-------------------------:|:-------:|:----------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------:|:---------:|
 |     language      |         Language          |  enum   |                                           'jp'                                           |                                  Japanese                                  |   'jp'    |
-|       font        |           Font            |  enum   |                                 '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt'                                  |       Default / XLSJ / XLSF / HKLW7 / KT      |    ''     |
+|       font        |           Font            |  enum   |         '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'         | Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2 |    ''     |
 |       name        |         Card Name         | string  |                                            —                                             |                                     —                                      |    ''     |
 |       color       |      Card Name Color      | string  |                                            —                                             |                                     —                                      |    ''     |
 |       align       |    Card Name Alignment    |  enum   |                               'left' / 'center' / 'right'                                |                           Left / Center / Right                            |  'left'   |
@@ -254,7 +251,7 @@ http.createServer((req, res) => {
 | descriptionWeight |    Effect Text Weight     | number  |                                            —                                             |                                     —                                      |     0     |
 |      package      |         Card Pack         | string  |                                            —                                             |                                     —                                      |    ''     |
 |     password      |       Card Password       | string  |                                            —                                             |                                     —                                      |    ''     |
-|     copyright     |         Copyright         |  enum   |                                           'jp'                                           |                                  Japanese                                  |    ''     |
-|       laser       |        Laser Mark         |  enum   |                        '' / 'laser-gold' / 'laser-silver'                        |       None / Gold / Silver       |    ''     |
+|     copyright     |         Copyright         |  enum   |                                '' / 'en' / 'jp' / 'sc'                                 |                None / EN / JP / SC                 |    ''     |
+|       laser       |        Laser Mark         |  enum   |              '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'               |       Style 1 / 2 / 3 / 4        |    ''     |
 |      radius       |      Rounded Corners      | boolean |                                            —                                             |                                     —                                      |   true    |
 |       scale       |        Card Scale         | number  |                                            —                                             |                                     —                                      |     1     |
