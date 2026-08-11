@@ -2,7 +2,7 @@
   "name": "yugioh-card",
   "private": true,
   "version": "1.0.0",
-  "description": "游戏王卡片 Canvas 渲染工具，支持可视化表单编辑与桌面应用打包",
+  "description": "Yu-Gi-Oh Card - 游戏王卡片可视化制卡器，基于 Canvas 渲染，支持 OCG 卡库检索与桌面 EXE 打包",
   "type": "module",
   "main": "dist-electron/main.js",
   "packageManager": "pnpm@10.32.1",
@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kooriookami/yugioh-card"
+    "url": "https://github.com/iloveaimer/YuGiOh-Card"
   },
   "keywords": [
     "yugioh-card",
@@ -33,7 +33,7 @@
     "leafer",
     "canvas"
   ],
-  "author": "kooriookami",
+  "author": "iloveaimer",
   "license": "ISC",
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -81,8 +81,8 @@
     ]
   },
   "build": {
-    "appId": "com.yugioh.card-maker",
-    "productName": "游戏王卡片生成器",
+    "appId": "com.iloveaimer.yugioh-card",
+    "productName": "Yu-Gi-Oh Card",
     "directories": {
       "output": "release"
     },

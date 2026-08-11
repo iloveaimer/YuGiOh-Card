@@ -18,6 +18,8 @@
 
 <p align="center">A visual Yu-Gi-Oh! card maker with Canvas rendering, OCG card search, random generation, HD artwork, and desktop EXE packaging</p>
 
+> Forked from [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card)
+
 <p align="center">
   <img src="src/assets/image/banner.jpg">
 </p>
