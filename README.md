@@ -18,8 +18,6 @@
 
 <p align="center">基于 Canvas 的游戏王可视化制卡器，支持 OCG 卡库检索、随机生成、高清卡图与桌面 EXE 打包</p>
 
-> 基于 [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) 二次开发</p>
-
 <p align="center">
   <img src="src/assets/image/banner.jpg">
 </p>
@@ -48,6 +46,7 @@
 
 ## 🫡 特别感谢
 
+- [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) 本项目基于此二次开发
 - [LeaferJS](https://www.leaferjs.com/) 提供的强大图形渲染功能
 - [白羽幸鳥](https://tieba.baidu.com/home/main?id=tb.1.d6c63ffd.3YV5T6Q9Z7uIeVVhPlo8hg%3Ft%3D1654573649) 提供的高清卡模
 
