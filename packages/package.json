@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kooriookami/yugioh-card"
+    "url": "https://github.com/iloveaimer/YuGiOh-Card"
   },
   "keywords": [
     "yugioh-card",
@@ -27,7 +27,7 @@
     "leafer",
     "canvas"
   ],
-  "author": "kooriookami",
+  "author": "iloveaimer",
   "license": "MIT",
   "dependencies": {
     "@leafer/node": "^2.0.4",

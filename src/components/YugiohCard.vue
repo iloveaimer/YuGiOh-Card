@@ -715,7 +715,7 @@
       </div>
     </div>
     <footer class="site-footer">
-      Powered by <a href="https://ygocdb.com/" target="_blank" rel="noopener">ygocdb.com</a> · <a href="http://www.ygotoken.com/" target="_blank" rel="noopener">ygotoken.com</a> · <a href="https://github.com/kooriookami/yugioh-card" target="_blank" rel="noopener">GitHub</a>
+      Powered by <a href="https://ygocdb.com/" target="_blank" rel="noopener">ygocdb.com</a> · <a href="http://www.ygotoken.com/" target="_blank" rel="noopener">ygotoken.com</a> · <a href="https://github.com/iloveaimer/YuGiOh-Card" target="_blank" rel="noopener">GitHub</a>
     </footer>
   </div>
 </template>
@@ -947,7 +947,7 @@ const changeCard = cardType => {
     data: demo,
     resourcePath: window.__YG__?.resourcePath
       ?? (import.meta.env.PROD
-        ? 'https://raw.githubusercontent.com/kooriookami/yugioh-card/refs/heads/master/src/assets/yugioh-card'
+        ? 'https://raw.githubusercontent.com/iloveaimer/YuGiOh-Card/refs/heads/main/src/assets/yugioh-card'
         : 'src/assets/yugioh-card'),
   });
   syncCardViewSize(); // 包装层匹配 canvas 尺寸，flex 自动居中
