@@ -1306,7 +1306,7 @@ const searchPassword = async () => {
     // 卡图：ygotoken 的 WebP 高清艺术插画（1200×1200），通过 Vite 代理解决 CORS
     if (cardCid.value) {
       const imgPath = `/ygotoken-img/webp/${cardCid.value}.webp`;
-      formData.image = import.meta.env.DEV ? imgPath : `http://www.ygotoken.com/images/webp/${cardCid.value}.webp`;
+      formData.image = import.meta.env.DEV ? imgPath : `https://images.weserv.nl/?url=www.ygotoken.com/images/webp/${cardCid.value}.webp`;
     } else {
       formData.image = '';
       ElMessage.warning('该卡片暂无卡图，可手动上传');
