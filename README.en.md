@@ -46,9 +46,9 @@ Currently there are 5 types of cards: 🚀🚀🚀🚀🚀
 
 ## 🫡 Special Thanks
 
-- [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) This project is forked from
 - [LeaferJS](https://www.leaferjs.com/) for the powerful graphics rendering capabilities
 - [白羽幸鳥](https://tieba.baidu.com/home/main?id=tb.1.d6c63ffd.3YV5T6Q9Z7uIeVVhPlo8hg%3Ft%3D1654573649) for providing high-resolution card templates
+- [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) for the original project
 
 ## 🚩 Online Demo
 
