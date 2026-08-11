@@ -1,7 +1,7 @@
 {
   "name": "yugioh-card",
   "private": true,
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "Yu-Gi-Oh Card - 游戏王卡片可视化制卡器，基于 Canvas 渲染，支持 OCG 卡库检索与桌面 EXE 打包",
   "type": "module",
   "main": "dist-electron/main.js",
