@@ -1,0 +1,43 @@
+name: 自动构建部署
+
+on:
+  push:
+    branches: [neos, main]
+    paths-ignore:
+      - 'docs/**'          # 避免 docs 提交触发循环构建
+      - 'release/**'
+      - '*.md'
+      - 'LICENSE'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install
+
+      - name: 构建网站
+        run: pnpm build
+
+      - name: 提交 docs 目录
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git diff --staged --quiet || git commit -m "自动构建 [skip ci]"
+          git push

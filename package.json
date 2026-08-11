@@ -14,7 +14,7 @@
     "build": "vite build",
     "build:electron": "vite build --mode electron",
     "build:lib": "vite build --mode lib",
-    "build:exe": "pnpm build:electron && set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/&& electron-builder",
+    "build:exe": "node scripts/bump-version.js && pnpm build:electron && set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/&& electron-builder",
     "preview": "vite preview",
     "test": "node --test",
     "publish": "pnpm publish dist --registry https://registry.npmjs.org",

@@ -70,7 +70,7 @@
       <div class="param-panel">
         <!-- 顶部：标题 -->
         <div class="param-header">
-          <h2 class="param-title">游戏王卡片生成器</h2>
+          <h2 class="param-title">游戏王卡片生成器 <span class="version-tag">v2.4</span></h2>
           <p class="param-desc">YGO Card Markers</p>
         </div>
 
@@ -1474,6 +1474,13 @@ const autoPhonetic = () => {
     font-weight: 600;
     color: #303133;
     margin: 0 0 4px;
+
+    .version-tag {
+      font-size: 11px;
+      font-weight: 400;
+      color: #909399;
+      margin-left: 6px;
+    }
   }
 
   .param-desc {
