@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
-    publicDir: false,
+    publicDir: 'public',
     plugins: [
       vue(),
       // Electron 插件 + 静态资源拷贝（仅 electron 模式）

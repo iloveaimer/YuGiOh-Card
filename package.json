@@ -114,7 +114,11 @@
       "allowToChangeInstallationDirectory": true,
       "language": "2052",
       "unicode": true,
-      "deleteAppDataOnUninstall": true
+      "deleteAppDataOnUninstall": true,
+      "artifactName": "YuGiOh-Card-Setup-v${version}-x64.${ext}"
+    },
+    "portable": {
+      "artifactName": "YuGiOh-Card-Portable-v${version}-x64.${ext}"
     }
   }
 }

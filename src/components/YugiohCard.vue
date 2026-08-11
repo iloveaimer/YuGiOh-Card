@@ -1143,14 +1143,19 @@ const toggleArrow = val => {
 };
 
 // ──────────────────────────────────────────────
-// 随机生成（百鸽 API 待定，先用 ygotoken 缓存取 id）
+// 随机生成（从本地全卡密列表真随机，卡密数据来自 ygotoken.com）
 // ──────────────────────────────────────────────
+let cardIdCache = null;
+
 const randomGenerate = async () => {
   randomLoading.value = true;
   try {
-    const cache = await loadYgotokenCache();
-    const card = cache[Math.floor(Math.random() * cache.length)];
-    formData.password = String(card.id);
+    if (!cardIdCache) {
+      const resp = await fetch('./card-ids.json');
+      cardIdCache = await resp.json();
+    }
+    const id = cardIdCache[Math.floor(Math.random() * cardIdCache.length)];
+    formData.password = String(id);
     await searchPassword();
   } catch {
     ElMessage.error('随机生成失败，请重试');
@@ -1198,11 +1203,15 @@ const parseOcgType = code => {
 let ygotokenCache = null;
 const loadYgotokenCache = async () => {
   if (ygotokenCache) return ygotokenCache;
-  const url = import.meta.env.DEV ? '/ygotoken-api/api/cards' : 'http://www.ygotoken.com/api/cards';
-  const resp = await fetch(url);
-  const data = await resp.json();
-  ygotokenCache = data;
-  return data;
+  try {
+    const url = import.meta.env.DEV ? '/ygotoken-api/api/cards' : 'https://www.ygotoken.com/api/cards';
+    const resp = await fetch(url);
+    ygotokenCache = await resp.json();
+    return ygotokenCache;
+  } catch {
+    ygotokenCache = [];
+    return [];
+  }
 };
 
 const searchPassword = async () => {
