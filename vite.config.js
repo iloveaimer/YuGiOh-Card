@@ -68,10 +68,16 @@ export default defineConfig(({ mode }) => {
         }),
         viteStaticCopy({
           targets: [
-            { src: 'src/assets/yugioh-card/**/*', dest: 'assets' },
+            { src: 'src/assets/yugioh-card', dest: 'assets' },
           ],
         }),
       ] : []),
+      // website 模式：复制卡片资源到 docs/ 避免远程加载
+      ...(buildTarget === 'website' ? [viteStaticCopy({
+        targets: [
+          { src: 'src/assets/yugioh-card', dest: 'assets' },
+        ],
+      })] : []),
       ...(isLib ? [viteStaticCopy({
         targets: [
           { src: 'packages/package.json', dest: '.', rename: { stripBase: 1 } },

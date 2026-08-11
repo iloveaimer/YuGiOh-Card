@@ -70,7 +70,7 @@
       <div class="param-panel">
         <!-- 顶部：标题 -->
         <div class="param-header">
-          <h2 class="param-title">游戏王卡片生成器 <span class="version-tag">v2.4</span></h2>
+          <h2 class="param-title">游戏王卡片生成器 <span class="version-tag">v2.3.6</span></h2>
           <p class="param-desc">YGO Card Markers</p>
         </div>
 
@@ -948,7 +948,7 @@ const changeCard = cardType => {
     data: demo,
     resourcePath: window.__YG__?.resourcePath
       ?? (import.meta.env.PROD
-        ? 'https://raw.githubusercontent.com/iloveaimer/YuGiOh-Card/refs/heads/main/src/assets/yugioh-card'
+        ? './assets/src/assets/yugioh-card'
         : 'src/assets/yugioh-card'),
   });
   syncCardViewSize(); // 包装层匹配 canvas 尺寸，flex 自动居中

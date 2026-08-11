@@ -91,33 +91,27 @@ export class YugiohCard extends Card {
   }
 
   draw() {
-    this.drawCard();
-    this.drawName();
-    this.drawAttribute();
-    this.drawLevel();
-    this.drawRank();
-    this.drawSpellTrap();
-    this.drawImage();
-    this.drawMask();
-    this.drawPendulum();
-    this.drawPendulumDescription();
-    this.drawPackage();
-    this.drawLinkArrow();
-    this.drawEffect();
-    this.drawDescription();
-    this.drawAtkDefLink();
-    this.drawPassword();
-    this.drawCopyright();
-    this.drawLaser();
-    this.drawRare();
-    this.drawAttributeRare();
-    this.drawTwentieth();
-    this.updateScale();
+    const steps = [
+      'drawCard', 'drawName', 'drawAttribute', 'drawLevel', 'drawRank',
+      'drawSpellTrap', 'drawImage', 'drawMask', 'drawPendulum',
+      'drawPendulumDescription', 'drawPackage', 'drawLinkArrow',
+      'drawEffect', 'drawDescription', 'drawAtkDefLink', 'drawPassword',
+      'drawCopyright', 'drawLaser', 'drawRare', 'drawAttributeRare',
+      'drawTwentieth', 'updateScale',
+    ];
+    for (const step of steps) {
+      try {
+        this[step]();
+      } catch (e) {
+        console.error(`[YugiohCard] ${step}() 渲染失败:`, e);
+      }
+    }
   }
 
   drawCard() {
     if (!this.cardLeaf) {
       this.cardLeaf = new Image();
+      this.listenImageStatus(this.cardLeaf);
       this.leafer.add(this.cardLeaf);
     }
     this.cardLeaf.set({
@@ -462,7 +456,7 @@ export class YugiohCard extends Card {
     ];
 
     this.linkArrowLeaf.children.forEach((arrow, index) => {
-      const showArrow = this.data.arrowList.includes(index + 1);
+      const showArrow = this.data.arrowList?.includes(index + 1);
       arrow.set({
         url: showArrow ? arrowOnList[index].url : arrowOffList[index].url,
         x: showArrow ? arrowOnList[index].x : arrowOffList[index].x,
@@ -628,7 +622,8 @@ export class YugiohCard extends Card {
       visible: (this.data.type === 'monster' && this.data.cardType !== 'link') || this.data.type === 'pendulum',
     });
 
-    const linkText = this.data.language === 'astral' ? numberToFull(this.data.arrowList.length) : this.data.arrowList.length;
+    const arrowLen = this.data.arrowList?.length ?? 0;
+    const linkText = this.data.language === 'astral' ? numberToFull(arrowLen) : arrowLen;
     const linkLeft = this.data.language === 'astral' ? 1279 : 1280;
     link.set({
       text: linkText,

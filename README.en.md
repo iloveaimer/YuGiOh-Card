@@ -24,15 +24,15 @@
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 🔍 **OCG Card Search** | Search by password or name, auto-fill all fields |
-| 🎲 **Random Card** | Pick a random card from the full OCG database |
-| 🌐 **Multi-Locale Names** | YGOPro / Simplified Chinese / Master Duel / NWBBS / CNOCG |
-| 🖼️ **HD Artwork** | 1200×1200 WebP art|
+| Feature                   | Description                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| 🔍 **OCG Card Search**    | Search by password or name, auto-fill all fields                                       |
+| 🎲 **Random Card**        | Pick a random card from the full OCG database                                          |
+| 🌐 **Multi-Locale Names** | YGOPro / Simplified Chinese / Master Duel / NWBBS / CNOCG                              |
+| 🖼️ **HD Artwork**         | 1200×1200 WebP art                                                                     |
 | 🎨 **Full Customization** | Color/gradient/fonts, type/attribute/level/ATK-DEF, link arrows, laser marks, rarities |
-| 📦 **One-Click Export** | JSON import/export, high-res PNG (up to 5x) |
-| 🖥️ **Desktop App** | Windows EXE, standalone, no browser needed |
+| 📦 **One-Click Export**   | JSON import/export, high-res PNG (up to 5x)                                            |
+| 🖥️ **Desktop App**        | Windows EXE, standalone, no browser needed                                             |
 
 > Card data by [ygocdb.com](https://ygocdb.com/), artwork by [ygotoken.com](http://www.ygotoken.com/)
 
@@ -48,7 +48,7 @@ Currently there are 5 types of cards: 🚀🚀🚀🚀🚀
 
 - [LeaferJS](https://www.leaferjs.com/) for the powerful graphics rendering capabilities
 - [白羽幸鳥](https://tieba.baidu.com/home/main?id=tb.1.d6c63ffd.3YV5T6Q9Z7uIeVVhPlo8hg%3Ft%3D1654573649) for providing high-resolution card templates
-- [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) — this project is forked and built upon their work
+- [kooriookami/yugioh-card](https://github.com/kooriookami/yugioh-card) this project is forked and built upon their work
 
 ## 🚩 Online Demo
 
@@ -111,20 +111,24 @@ import path from 'path';
 import skia from 'skia-canvas';
 import { YugiohCard } from 'yugioh-card';
 
-http.createServer((req, res) => {
-  const card = new YugiohCard({
-    data: { /* see Data Properties below */ },
-    resourcePath: path.resolve('./src/assets/yugioh-card'),
-    skia: skia,
+http
+  .createServer((req, res) => {
+    const card = new YugiohCard({
+      data: {
+        /* see Data Properties below */
+      },
+      resourcePath: path.resolve('./src/assets/yugioh-card'),
+      skia: skia,
+    });
+    card.leafer.export('png', { screenshot: true }).then((result) => {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.write(`<img src="${result.data}" />`);
+      res.end();
+    });
+  })
+  .listen(3000, () => {
+    console.log('server is running at http://localhost:3000');
   });
-  card.leafer.export('png', { screenshot: true }).then(result => {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.write(`<img src="${result.data}" />`);
-    res.end();
-  });
-}).listen(3000, () => {
-  console.log('server is running at http://localhost:3000');
-});
 ```
 
 ## 🔎 Example Code
@@ -135,79 +139,79 @@ http.createServer((req, res) => {
 
 ### Yu-Gi-Oh!
 
-|    Property Name    |        Description        |  Type   |                                                       Options                                                       |                                                  Notes                                                  |      Default      |
-|:-------------------:|:-------------------------:|:-------:|:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------:|:-----------------:|
-|      language       |         Language          |  enum   |                                     'sc' / 'tc' / 'jp' / 'kr' / 'en' / 'astral'                                     |             Simplified Chinese / Traditional Chinese / Japanese / Korean / English / Astral             |       'sc'        |
-|        font         |           Font            |  enum   |                   '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'                   |      Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2      |        ''         |
-|        name         |         Card Name         | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|        color        |      Card Name Color      | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|        align        |    Card Name Alignment    |  enum   |                                             'left' / 'center' / 'right'                                             |                                          Left / Center / Right                                          |      'left'       |
-|      gradient       | Whether Name Has Gradient | boolean |                                                          —                                                          |                                                    —                                                    |       false       |
-|   gradientColor1    |     Gradient Color 1      | string  |                                                          —                                                          |                                                    —                                                    |     '#999999'     |
-|   gradientColor2    |     Gradient Color 2      | string  |                                                          —                                                          |                                                    —                                                    |     '#ffffff'     |
-|        type         |           Type            |  enum   |                                      'monster' / 'spell' / 'trap' / 'pendulum'                                      |                                    Monster / Spell / Trap / Pendulum                                    |     'monster'     |
-|      attribute      |         Attribute         |  enum   |                       'dark' / 'light' / 'earth' / 'water' / 'fire' / 'wind' / 'divine' / ''                        |                       Dark / Light / Earth / Water / Fire / Wind / Divine / None                        |      'dark'       |
-|        icon         |      Spell/Trap Icon      |  enum   |                       'equip' / 'field' / 'quick-play' / 'ritual' / 'continuous' / 'counter'                        |                       Equip / Field / Quick-Play / Ritual / Continuous / Counter                        |        ''         |
-|        image        |       Center Image        | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|      cardType       |         Card Type         |  enum   |                  'normal' / 'effect' / 'ritual' / 'fusion' / 'synchro' / 'xyz' / 'link' / 'token'                   |                    Normal / Effect / Ritual / Fusion / Synchro / XYZ / Link / Token                     |     'normal'      |
-|    pendulumType     |       Pendulum Type       |  enum   | 'normal-pendulum' / 'effect-pendulum' / 'ritual-pendulum' / 'fusion-pendulum' / 'synchro-pendulum' / 'xyz-pendulum' / 'link-pendulum' | Normal / Effect / Ritual / Fusion / Synchro / XYZ / Link Pendulum | 'normal-pendulum' |
-|        level        |           Level           | number  |                                                          —                                                          |                                                    —                                                    |         0         |
-|        rank         |           Rank            | number  |                                                          —                                                          |                                                    —                                                    |         0         |
-|    pendulumScale    |      Pendulum Scale       | number  |                                                          —                                                          |                                                    —                                                    |         0         |
-| pendulumDescription |      Pendulum Effect      | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|     monsterType     |       Monster Type        | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|       atkBar        |     Show ATK/DEF Bar      | boolean |                                                          —                                                          |                                                    —                                                    |       true        |
-|         atk         |            ATK            | number  |                                                          —                                                          |                                               ?：-1, ∞：-2                                                |         0         |
-|         def         |            DEF            | number  |                                                          —                                                          |                                               ?：-1, ∞：-2                                                |         0         |
-|      arrowList      |        Link Arrows        |  array  |                                                  [1,2,3,4,5,6,7,8]                                                  |               [Top, Top-Right, Right, Bottom-Right, Bottom, Bottom-Left, Left, Top-Left]                |        []         |
-|     description     |    Effect Description     | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|  firstLineCompress  |    Compress First Line    | boolean |                                                          —                                                          |                                                    —                                                    |       false       |
-|  descriptionAlign   |    Center Effect Text     | boolean |                                                          —                                                          |                                                    —                                                    |       false       |
-|   descriptionZoom   |     Effect Text Zoom      | number  |                                                          —                                                          |                                                    —                                                    |         1         |
-|  descriptionWeight  |    Effect Text Weight     | number  |                                                          —                                                          |                                                    —                                                    |         0         |
-|       package       |         Card Pack         | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|      password       |       Card Password       | string  |                                                          —                                                          |                                                    —                                                    |        ''         |
-|      copyright      |         Copyright         |  enum   |                                            '' / 'en' / 'jp' / 'sc'                                            |               None / EN / JP / SC               |        ''         |
-|        laser        |        Laser Mark         |  enum   |                                  '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'                                   |               Style 1 / 2 / 3 / 4               |        ''         |
-|        rare         |          Rarity           |  enum   |                       'dt' / 'ur' / 'gr' / 'hr' / 'ser' / 'gser' / 'pser'                        |              DT / UR / GR / HR / SER / GSER / PSER              |        ''         |
-|      twentieth      |       Anniversary         | string  |                                         '' / 'twentieth' / 'twentyfive'                                         |               None / 20th / 25th               |        ''         |
-|       radius        |      Rounded Corners      | boolean |                                                          —                                                          |                                                    —                                                    |       true        |
-|        scale        |        Card Scale         | number  |                                                          —                                                          |                                                    —                                                    |         1         |
+|    Property Name    |        Description        |  Type   |                                                                Options                                                                |                                      Notes                                      |      Default      |
+| :-----------------: | :-----------------------: | :-----: | :-----------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: | :---------------: |
+|      language       |         Language          |  enum   |                                              'sc' / 'tc' / 'jp' / 'kr' / 'en' / 'astral'                                              | Simplified Chinese / Traditional Chinese / Japanese / Korean / English / Astral |       'sc'        |
+|        font         |           Font            |  enum   |                                    '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'                                     |             Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2              |        ''         |
+|        name         |         Card Name         | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|        color        |      Card Name Color      | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|        align        |    Card Name Alignment    |  enum   |                                                      'left' / 'center' / 'right'                                                      |                              Left / Center / Right                              |      'left'       |
+|      gradient       | Whether Name Has Gradient | boolean |                                                                   —                                                                   |                                        —                                        |       false       |
+|   gradientColor1    |     Gradient Color 1      | string  |                                                                   —                                                                   |                                        —                                        |     '#999999'     |
+|   gradientColor2    |     Gradient Color 2      | string  |                                                                   —                                                                   |                                        —                                        |     '#ffffff'     |
+|        type         |           Type            |  enum   |                                               'monster' / 'spell' / 'trap' / 'pendulum'                                               |                        Monster / Spell / Trap / Pendulum                        |     'monster'     |
+|      attribute      |         Attribute         |  enum   |                                'dark' / 'light' / 'earth' / 'water' / 'fire' / 'wind' / 'divine' / ''                                 |           Dark / Light / Earth / Water / Fire / Wind / Divine / None            |      'dark'       |
+|        icon         |      Spell/Trap Icon      |  enum   |                                'equip' / 'field' / 'quick-play' / 'ritual' / 'continuous' / 'counter'                                 |           Equip / Field / Quick-Play / Ritual / Continuous / Counter            |        ''         |
+|        image        |       Center Image        | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|      cardType       |         Card Type         |  enum   |                           'normal' / 'effect' / 'ritual' / 'fusion' / 'synchro' / 'xyz' / 'link' / 'token'                            |        Normal / Effect / Ritual / Fusion / Synchro / XYZ / Link / Token         |     'normal'      |
+|    pendulumType     |       Pendulum Type       |  enum   | 'normal-pendulum' / 'effect-pendulum' / 'ritual-pendulum' / 'fusion-pendulum' / 'synchro-pendulum' / 'xyz-pendulum' / 'link-pendulum' |        Normal / Effect / Ritual / Fusion / Synchro / XYZ / Link Pendulum        | 'normal-pendulum' |
+|        level        |           Level           | number  |                                                                   —                                                                   |                                        —                                        |         0         |
+|        rank         |           Rank            | number  |                                                                   —                                                                   |                                        —                                        |         0         |
+|    pendulumScale    |      Pendulum Scale       | number  |                                                                   —                                                                   |                                        —                                        |         0         |
+| pendulumDescription |      Pendulum Effect      | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|     monsterType     |       Monster Type        | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|       atkBar        |     Show ATK/DEF Bar      | boolean |                                                                   —                                                                   |                                        —                                        |       true        |
+|         atk         |            ATK            | number  |                                                                   —                                                                   |                                  ?：-1, ∞：-2                                   |         0         |
+|         def         |            DEF            | number  |                                                                   —                                                                   |                                  ?：-1, ∞：-2                                   |         0         |
+|      arrowList      |        Link Arrows        |  array  |                                                           [1,2,3,4,5,6,7,8]                                                           |   [Top, Top-Right, Right, Bottom-Right, Bottom, Bottom-Left, Left, Top-Left]    |        []         |
+|     description     |    Effect Description     | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|  firstLineCompress  |    Compress First Line    | boolean |                                                                   —                                                                   |                                        —                                        |       false       |
+|  descriptionAlign   |    Center Effect Text     | boolean |                                                                   —                                                                   |                                        —                                        |       false       |
+|   descriptionZoom   |     Effect Text Zoom      | number  |                                                                   —                                                                   |                                        —                                        |         1         |
+|  descriptionWeight  |    Effect Text Weight     | number  |                                                                   —                                                                   |                                        —                                        |         0         |
+|       package       |         Card Pack         | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|      password       |       Card Password       | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
+|      copyright      |         Copyright         |  enum   |                                                        '' / 'en' / 'jp' / 'sc'                                                        |                               None / EN / JP / SC                               |        ''         |
+|        laser        |        Laser Mark         |  enum   |                                            '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'                                             |                               Style 1 / 2 / 3 / 4                               |        ''         |
+|        rare         |          Rarity           |  enum   |                                          'dt' / 'ur' / 'gr' / 'hr' / 'ser' / 'gser' / 'pser'                                          |                      DT / UR / GR / HR / SER / GSER / PSER                      |        ''         |
+|      twentieth      |        Anniversary        | string  |                                                    '' / 'twentieth' / 'twentyfive'                                                    |                               None / 20th / 25th                                |        ''         |
+|       radius        |      Rounded Corners      | boolean |                                                                   —                                                                   |                                        —                                        |       true        |
+|        scale        |        Card Scale         | number  |                                                                   —                                                                   |                                        —                                        |         1         |
 
 ### Rush Duel
 
-|   Property Name   |     Description     |  Type   |                                Options                                 |                           Notes                            |  Default  |
-|:-----------------:|:-------------------:|:-------:|:----------------------------------------------------------------------:|:----------------------------------------------------------:|:---------:|
-|     language      |      Language       |  enum   |                              'sc' / 'jp'                               |               Simplified Chinese / Japanese                |   'sc'    |
-|       name        |      Card Name      | string  |                                   —                                    |                             —                              |    ''     |
-|       color       |   Card Name Color   | string  |                                   —                                    |                             —                              |    ''     |
-|       type        |        Type         |  enum   |                      'monster' / 'spell' / 'trap'                      |                   Monster / Spell / Trap                   | 'monster' |
-|     attribute     |      Attribute      |  enum   | 'dark' / 'light' / 'earth' / 'water' / 'fire' / 'wind' / 'divine' / '' | Dark / Light / Earth / Water / Fire / Wind / Divine / None |  'dark'   |
-|       icon        |   Spell/Trap Icon   |  enum   | 'equip' / 'field' / 'quick-play' / 'ritual' / 'continuous' / 'counter' | Equip / Field / Quick-Play / Ritual / Continuous / Counter |    ''     |
-|       image       |    Center Image     | string  |                                   —                                    |                             —                              |    ''     |
-|     cardType      |      Card Type      |  enum   |               'normal' / 'effect' / 'ritual' / 'fusion'                |             Normal / Effect / Ritual / Fusion              | 'normal'  |
-|       level       |        Level        | number  |                                   —                                    |                             —                              |     0     |
-|    monsterType    |    Monster Type     | string  |                                   —                                    |                             —                              |    ''     |
-|    maximumAtk     |     Maximum ATK     | number  |                                   —                                    |                             —                              |     0     |
-|        atk        |         ATK         | number  |                                   —                                    |                            ?：-1                            |     0     |
-|        def        |         DEF         | number  |                                   —                                    |                            ?：-1                            |     0     |
-|    description    | Effect Description  | string  |                                   —                                    |                             —                              |    ''     |
-| firstLineCompress | Compress First Line | boolean |                                   —                                    |                             —                              |   false   |
-| descriptionAlign  | Center Effect Text  | boolean |                                   —                                    |                             —                              |   false   |
-|  descriptionZoom  |  Effect Text Zoom   | number  |                                   —                                    |                             —                              |     1     |
-| descriptionWeight | Effect Text Weight  | number  |                                   —                                    |                             —                              |     0     |
-|      package      |      Card Pack      | string  |                                   —                                    |                             —                              |    ''     |
-|     password      |    Card Password    | string  |                                   —                                    |                             —                              |    ''     |
-|      legend       |      Legendary      | boolean |                                   —                                    |                             —                              |   false   |
-|       laser       |     Laser Mark      |  enum   |              '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'               |      Style 1 / 2 / 3 / 4      |    ''     |
+|   Property Name   |     Description     |  Type   |                                     Options                                      |                           Notes                            |  Default  |
+| :---------------: | :-----------------: | :-----: | :------------------------------------------------------------------------------: | :--------------------------------------------------------: | :-------: |
+|     language      |      Language       |  enum   |                                   'sc' / 'jp'                                    |               Simplified Chinese / Japanese                |   'sc'    |
+|       name        |      Card Name      | string  |                                        —                                         |                             —                              |    ''     |
+|       color       |   Card Name Color   | string  |                                        —                                         |                             —                              |    ''     |
+|       type        |        Type         |  enum   |                           'monster' / 'spell' / 'trap'                           |                   Monster / Spell / Trap                   | 'monster' |
+|     attribute     |      Attribute      |  enum   |      'dark' / 'light' / 'earth' / 'water' / 'fire' / 'wind' / 'divine' / ''      | Dark / Light / Earth / Water / Fire / Wind / Divine / None |  'dark'   |
+|       icon        |   Spell/Trap Icon   |  enum   |      'equip' / 'field' / 'quick-play' / 'ritual' / 'continuous' / 'counter'      | Equip / Field / Quick-Play / Ritual / Continuous / Counter |    ''     |
+|       image       |    Center Image     | string  |                                        —                                         |                             —                              |    ''     |
+|     cardType      |      Card Type      |  enum   |                    'normal' / 'effect' / 'ritual' / 'fusion'                     |             Normal / Effect / Ritual / Fusion              | 'normal'  |
+|       level       |        Level        | number  |                                        —                                         |                             —                              |     0     |
+|    monsterType    |    Monster Type     | string  |                                        —                                         |                             —                              |    ''     |
+|    maximumAtk     |     Maximum ATK     | number  |                                        —                                         |                             —                              |     0     |
+|        atk        |         ATK         | number  |                                        —                                         |                           ?：-1                            |     0     |
+|        def        |         DEF         | number  |                                        —                                         |                           ?：-1                            |     0     |
+|    description    | Effect Description  | string  |                                        —                                         |                             —                              |    ''     |
+| firstLineCompress | Compress First Line | boolean |                                        —                                         |                             —                              |   false   |
+| descriptionAlign  | Center Effect Text  | boolean |                                        —                                         |                             —                              |   false   |
+|  descriptionZoom  |  Effect Text Zoom   | number  |                                        —                                         |                             —                              |     1     |
+| descriptionWeight | Effect Text Weight  | number  |                                        —                                         |                             —                              |     0     |
+|      package      |      Card Pack      | string  |                                        —                                         |                             —                              |    ''     |
+|     password      |    Card Password    | string  |                                        —                                         |                             —                              |    ''     |
+|      legend       |      Legendary      | boolean |                                        —                                         |                             —                              |   false   |
+|       laser       |     Laser Mark      |  enum   |                  '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'                  |                    Style 1 / 2 / 3 / 4                     |    ''     |
 |       rare        |       Rarity        |  enum   | 'dt' / 'ur' / 'gr' / 'hr' / 'mr' / 'kc' / 'cr' / 'esr' / 'ser' / 'gser' / 'pser' | DT / UR / GR / HR / MR / KC / CR / ESR / SER / GSER / PSER |    ''     |
-|      radius       |   Rounded Corners   | boolean |                                   —                                    |                             —                              |   true    |
-|       scale       |     Card Scale      | number  |                                   —                                    |                             —                              |     1     |
+|      radius       |   Rounded Corners   | boolean |                                        —                                         |                             —                              |   true    |
+|       scale       |     Card Scale      | number  |                                        —                                         |                             —                              |     1     |
 
 ### Yu-Gi-Oh! Card Back
 
 | Property Name |   Description   |  Type   |                         Options                         |                      Notes                      | Default  |
-|:-------------:|:---------------:|:-------:|:-------------------------------------------------------:|:-----------------------------------------------:|:--------:|
+| :-----------: | :-------------: | :-----: | :-----------------------------------------------------: | :---------------------------------------------: | :------: |
 |     type      | Card Back Type  |  enum   | 'normal' / 'tormentor' / 'sky-dragon' / 'winged-dragon' | Normal / Tormentor / Sky Dragon / Winged Dragon | 'normal' |
 |     logo      |      Logo       |  enum   |                  'ocg' / 'tcg' / 'rd'                   |                 OCG / TCG / RD                  |  'ocg'   |
 |    konami     |   Show K mark   | boolean |                            —                            |                        —                        |   true   |
@@ -218,7 +222,7 @@ http.createServer((req, res) => {
 ### Field Center Card
 
 | Property Name |   Description   |  Type   | Options | Notes | Default |
-|:-------------:|:---------------:|:-------:|:-------:|:-----:|:-------:|
+| :-----------: | :-------------: | :-----: | :-----: | :---: | :-----: |
 |     image     |   Field Image   | string  |    —    |   —   |   ''    |
 |   cardBack    |  Is Card Back   | boolean |    —    |   —   |  false  |
 |    radius     | Rounded Corners | boolean |    —    |   —   |  true   |
@@ -227,9 +231,9 @@ http.createServer((req, res) => {
 ### Yu-Gi-Oh! Series 2
 
 |   Property Name   |        Description        |  Type   |                                         Options                                          |                                   Notes                                    |  Default  |
-|:-----------------:|:-------------------------:|:-------:|:----------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------:|:---------:|
+| :---------------: | :-----------------------: | :-----: | :--------------------------------------------------------------------------------------: | :------------------------------------------------------------------------: | :-------: |
 |     language      |         Language          |  enum   |                                           'jp'                                           |                                  Japanese                                  |   'jp'    |
-|       font        |           Font            |  enum   |         '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'         | Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2 |    ''     |
+|       font        |           Font            |  enum   |              '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'              |           Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2           |    ''     |
 |       name        |         Card Name         | string  |                                            —                                             |                                     —                                      |    ''     |
 |       color       |      Card Name Color      | string  |                                            —                                             |                                     —                                      |    ''     |
 |       align       |    Card Name Alignment    |  enum   |                               'left' / 'center' / 'right'                                |                           Left / Center / Right                            |  'left'   |
@@ -243,8 +247,8 @@ http.createServer((req, res) => {
 |     cardType      |         Card Type         |  enum   | 'normal' / 'effect' / 'ritual' / 'fusion' / 'tormentor' / 'sky-dragon' / 'winged-dragon' | Normal / Effect / Ritual / Fusion / Tormentor / Sky Dragon / Winged Dragon | 'normal'  |
 |       level       |           Level           | number  |                                            —                                             |                                     —                                      |     0     |
 |    monsterType    |       Monster Type        | string  |                                            —                                             |                                     —                                      |    ''     |
-|        atk        |            ATK            | number  |                                            —                                             |                              ????：-1, X000：-2                              |     0     |
-|        def        |            DEF            | number  |                                            —                                             |                              ????：-1, X000：-2                              |     0     |
+|        atk        |            ATK            | number  |                                            —                                             |                             ????：-1, X000：-2                             |     0     |
+|        def        |            DEF            | number  |                                            —                                             |                             ????：-1, X000：-2                             |     0     |
 |    description    |    Effect Description     | string  |                                            —                                             |                                     —                                      |    ''     |
 | firstLineCompress |    Compress First Line    | boolean |                                            —                                             |                                     —                                      |   false   |
 | descriptionAlign  |    Center Effect Text     | boolean |                                            —                                             |                                     —                                      |   false   |
@@ -252,7 +256,7 @@ http.createServer((req, res) => {
 | descriptionWeight |    Effect Text Weight     | number  |                                            —                                             |                                     —                                      |     0     |
 |      package      |         Card Pack         | string  |                                            —                                             |                                     —                                      |    ''     |
 |     password      |       Card Password       | string  |                                            —                                             |                                     —                                      |    ''     |
-|     copyright     |         Copyright         |  enum   |                                '' / 'en' / 'jp' / 'sc'                                 |                None / EN / JP / SC                 |    ''     |
-|       laser       |        Laser Mark         |  enum   |              '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'               |       Style 1 / 2 / 3 / 4        |    ''     |
+|     copyright     |         Copyright         |  enum   |                                 '' / 'en' / 'jp' / 'sc'                                  |                            None / EN / JP / SC                             |    ''     |
+|       laser       |        Laser Mark         |  enum   |                      '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'                      |                            Style 1 / 2 / 3 / 4                             |    ''     |
 |      radius       |      Rounded Corners      | boolean |                                            —                                             |                                     —                                      |   true    |
 |       scale       |        Card Scale         | number  |                                            —                                             |                                     —                                      |     1     |
