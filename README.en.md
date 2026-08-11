@@ -31,7 +31,7 @@
 | 🌐 **Multi-Locale Names** | YGOPro / Simplified Chinese / Master Duel / NWBBS / CNOCG |
 | 🖼️ **HD Artwork** | 1200×1200 WebP art|
 | 🎨 **Full Customization** | Color/gradient/fonts, type/attribute/level/ATK-DEF, link arrows, laser marks, rarities |
-| 📦 **One-Click Export** | JSON import/export, high-res PNG (up to 3x) |
+| 📦 **One-Click Export** | JSON import/export, high-res PNG (up to 5x) |
 | 🖥️ **Desktop App** | Windows EXE, standalone, no browser needed |
 
 > Card data by [ygocdb.com](https://ygocdb.com/), artwork by [ygotoken.com](http://www.ygotoken.com/)
@@ -95,6 +95,7 @@ const card = new YugiohCard({
 card.leafer.export('xxx.png', {
   screenshot: true,
   pixelRatio: devicePixelRatio,
+  scale: 3, // export resolution: 1x=1394×2031, up to 5x
 });
 ```
 

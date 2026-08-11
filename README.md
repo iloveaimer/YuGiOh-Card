@@ -31,7 +31,7 @@
 | 🌐 **多译名**       | YGOPro / 简中官方 / Master Duel / NWBBS / CNOCG             |
 | 🖼️ **高清卡图**     | 1200×1200 WebP 艺术插画                                     |
 | 🎨 **完整自定义**   | 颜色/渐变/字体、类型/属性/星级/攻防、连接箭头、防伪标、罕贵 |
-| 📦 **一键导出**     | JSON 导入/导出、高清 PNG（最高 3x）                         |
+| 📦 **一键导出**     | JSON 导入/导出、高清 PNG（最高 5x）                         |
 | 🖥️ **桌面应用**     | Windows EXE，独立运行                                       |
 
 > 卡片数据由 [ygocdb.com](https://ygocdb.com/) 提供，卡图由 [ygotoken.com](http://www.ygotoken.com/) 提供
@@ -81,7 +81,7 @@ const card = new YugiohCard({
   },
   resourcePath: 'xxx', // 静态资源路径，复制 src/assets/yugioh-card 到项目或服务器
 });
-// 导出：card.leafer.export('xxx.png', { screenshot: true });
+// 导出：card.leafer.export('xxx.png', { screenshot: true, pixelRatio: devicePixelRatio, scale: 3 });
 ```
 
 ````

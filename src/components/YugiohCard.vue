@@ -42,6 +42,19 @@
           <el-tooltip content="重置为默认卡数据" placement="bottom">
             <el-button size="small" :icon="RefreshLeft" @click="resetCard">重置</el-button>
           </el-tooltip>
+          <el-select
+            v-model="exportScale"
+            size="small"
+            style="width: 58px"
+            title="导出图片分辨率"
+          >
+            <el-option :value="0.5" label="0.5x" />
+            <el-option :value="1" label="1x" />
+            <el-option :value="2" label="2x" />
+            <el-option :value="3" label="3x" />
+            <el-option :value="4" label="4x" />
+            <el-option :value="5" label="5x" />
+          </el-select>
           <el-button
             size="small"
             type="primary"
@@ -690,19 +703,6 @@
             <!-- JSON 编辑器 -->
             <details class="json-section">
               <summary>高级</summary>
-              <div class="field field-slider" style="margin-top: 8px">
-                <label class="field-label">导出缩放</label>
-                <div class="slider-wrap">
-                  <el-slider
-                    v-model="formData.exportScale"
-                    :min="0.1"
-                    :max="3"
-                    :step="0.1"
-                    @input="updateCard"
-                  />
-                  <span class="slider-val">{{ formData.exportScale }}</span>
-                </div>
-              </div>
               <json-editor-vue
                 v-model="jsonData"
                 style="width: 100%; height: 300px"
@@ -746,6 +746,7 @@ import yugiohSeries2Demo from '@/assets/demo/yugioh-series-2-demo';
 
 const card = ref(null);
 const cardLeaf = shallowRef(null);
+const exportScale = ref(3);
 
 const form = reactive({
   card: 'yugioh',
@@ -1019,6 +1020,7 @@ const exportImage = () => {
   cardLeaf.value.leafer.export(`${name}.png`, {
     screenshot: true,
     pixelRatio: devicePixelRatio,
+    scale: exportScale.value,
   });
 };
 

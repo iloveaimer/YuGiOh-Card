@@ -693,8 +693,9 @@ export class YugiohCard extends Card {
     const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
     this.laserLeaf.set({
       url: laserUrl,
-      x: 1275,
-      y: 1911,
+      x: this.cardWidth - 119,
+      y: this.cardHeight - 120,
+      around: { type: 'percent', x: 1, y: 1 },
       visible: this.data.laser,
       zIndex: 120,
     });
