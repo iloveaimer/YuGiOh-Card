@@ -1303,10 +1303,19 @@ const searchPassword = async () => {
       formData.pendulumType = `${subType !== 'normal' ? subType : 'effect'}-pendulum`;
     }
 
-    // 卡图：ygotoken 的 WebP 高清艺术插画（1200×1200），通过 Vite 代理解决 CORS
+    // 卡图：ygotoken 的 WebP 高清艺术插画（1200×1200）
     if (cardCid.value) {
       const imgPath = `/ygotoken-img/webp/${cardCid.value}.webp`;
-      formData.image = import.meta.env.DEV ? imgPath : `https://images.weserv.nl/?url=www.ygotoken.com/images/webp/${cardCid.value}.webp`;
+      if (import.meta.env.DEV) {
+        // 开发环境：Vite 代理转发到 ygotoken，避免 CORS
+        formData.image = imgPath;
+      } else if (window.location.protocol === 'https:') {
+        // GitHub Pages 等 HTTPS 静态托管：通过 weserv 代理桥接 HTTP 源，解决混合内容拦截
+        formData.image = `https://images.weserv.nl/?url=www.ygotoken.com/images/webp/${cardCid.value}.webp`;
+      } else {
+        // EXE（file://）或 HTTP 环境：直连 ygotoken
+        formData.image = `http://www.ygotoken.com/images/webp/${cardCid.value}.webp`;
+      }
     } else {
       formData.image = '';
       ElMessage.warning('该卡片暂无卡图，可手动上传');
