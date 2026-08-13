@@ -29,3 +29,6 @@ temp_*
 
 # CodeBuddy IDE working space (memory, temp scripts, screenshots)
 .codebuddy/
+
+# 构建产物（GitHub Pages 由 gh-pages 分支托管，main 不存 docs）
+docs/

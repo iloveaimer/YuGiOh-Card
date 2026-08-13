@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - 'docs/**'          # 避免 docs 提交触发循环构建
+      - 'docs/**'
       - 'release/**'
       - '*.md'
       - 'LICENSE'
@@ -34,10 +34,10 @@ jobs:
       - name: 构建网站
         run: pnpm build
 
-      - name: 提交 docs 目录
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/
-          git diff --staged --quiet || git commit -m "自动构建 [skip ci]"
-          git push
+      - name: 部署到 gh-pages 分支
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          commit_message: '自动部署 [skip ci]'
