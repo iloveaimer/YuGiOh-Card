@@ -27,24 +27,15 @@ export class FieldCenterCard extends Card {
   }
 
   draw() {
-    const steps = ['drawCard', 'drawImage', 'drawMask', 'updateScale'];
-    for (const step of steps) {
-      try {
-        this[step]();
-      } catch (e) {
-        console.error(`[FieldCenterCard] ${step}() 渲染失败:`, e);
-      }
-    }
+    this.drawCard();
+    this.drawImage();
+    this.drawMask();
+    this.updateScale();
   }
 
   drawCard() {
-    if (this.cardLeaf && this._imageErrors.has(this.cardLeaf)) {
-      this.cardLeaf.remove();
-      this.cardLeaf = null;
-    }
     if (!this.cardLeaf) {
       this.cardLeaf = new Image();
-      this.listenImageStatus(this.cardLeaf);
       this.leafer.add(this.cardLeaf);
     }
     this.cardLeaf.set({
@@ -55,10 +46,6 @@ export class FieldCenterCard extends Card {
   }
 
   drawImage() {
-    if (this.imageLeaf && this._imageErrors.has(this.imageLeaf)) {
-      this.imageLeaf.remove();
-      this.imageLeaf = null;
-    }
     if (!this.imageLeaf) {
       this.imageLeaf = new Rect();
       this.listenImageStatus(this.imageLeaf);
@@ -82,13 +69,8 @@ export class FieldCenterCard extends Card {
   }
 
   drawMask() {
-    if (this.maskLeaf && this._imageErrors.has(this.maskLeaf)) {
-      this.maskLeaf.remove();
-      this.maskLeaf = null;
-    }
     if (!this.maskLeaf) {
       this.maskLeaf = new Image();
-      this.listenImageStatus(this.maskLeaf);
       this.leafer.add(this.maskLeaf);
     }
 

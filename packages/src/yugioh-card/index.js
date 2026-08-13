@@ -109,10 +109,6 @@ export class YugiohCard extends Card {
   }
 
   drawCard() {
-    if (this.cardLeaf && this._imageErrors.has(this.cardLeaf)) {
-      this.cardLeaf.remove();
-      this.cardLeaf = null;
-    }
     if (!this.cardLeaf) {
       this.cardLeaf = new Image();
       this.listenImageStatus(this.cardLeaf);
@@ -294,10 +290,6 @@ export class YugiohCard extends Card {
   }
 
   drawImage() {
-    if (this.imageLeaf && this._imageErrors.has(this.imageLeaf)) {
-      this.imageLeaf.remove();
-      this.imageLeaf = null;
-    }
     if (!this.imageLeaf) {
       this.imageLeaf = new Rect();
       this.listenImageStatus(this.imageLeaf);
@@ -321,13 +313,8 @@ export class YugiohCard extends Card {
   }
 
   drawMask() {
-    if (this.maskLeaf && this._imageErrors.has(this.maskLeaf)) {
-      this.maskLeaf.remove();
-      this.maskLeaf = null;
-    }
     if (!this.maskLeaf) {
       this.maskLeaf = new Image();
-      this.listenImageStatus(this.maskLeaf);
       this.leafer.add(this.maskLeaf);
     }
 
