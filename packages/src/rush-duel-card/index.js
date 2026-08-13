@@ -63,27 +63,29 @@ export class RushDuelCard extends Card {
   }
 
   draw() {
-    this.drawCard();
-    this.drawName();
-    this.drawAttribute();
-    this.drawLevel();
-    this.drawSpellTrap();
-    this.drawImage();
-    this.drawMask();
-    this.drawPackage();
-    this.drawEffect();
-    this.drawDescription();
-    this.drawMaximumAtk();
-    this.drawAtkDef();
-    this.drawLegend();
-    this.drawLaser();
-    this.drawRare();
-    this.updateScale();
+    const steps = [
+      'drawCard', 'drawName', 'drawAttribute', 'drawLevel',
+      'drawSpellTrap', 'drawImage', 'drawMask', 'drawPackage',
+      'drawEffect', 'drawDescription', 'drawMaximumAtk', 'drawAtkDef',
+      'drawLegend', 'drawLaser', 'drawRare', 'updateScale',
+    ];
+    for (const step of steps) {
+      try {
+        this[step]();
+      } catch (e) {
+        console.error(`[RushDuelCard] ${step}() 渲染失败:`, e);
+      }
+    }
   }
 
   drawCard() {
+    if (this.cardLeaf && this._imageErrors.has(this.cardLeaf)) {
+      this.cardLeaf.remove();
+      this.cardLeaf = null;
+    }
     if (!this.cardLeaf) {
       this.cardLeaf = new Image();
+      this.listenImageStatus(this.cardLeaf);
       this.leafer.add(this.cardLeaf);
     }
     this.cardLeaf.set({
@@ -232,6 +234,10 @@ export class RushDuelCard extends Card {
   }
 
   drawImage() {
+    if (this.imageLeaf && this._imageErrors.has(this.imageLeaf)) {
+      this.imageLeaf.remove();
+      this.imageLeaf = null;
+    }
     if (!this.imageLeaf) {
       this.imageLeaf = new Rect();
       this.listenImageStatus(this.imageLeaf);
@@ -255,8 +261,13 @@ export class RushDuelCard extends Card {
   }
 
   drawMask() {
+    if (this.maskLeaf && this._imageErrors.has(this.maskLeaf)) {
+      this.maskLeaf.remove();
+      this.maskLeaf = null;
+    }
     if (!this.maskLeaf) {
       this.maskLeaf = new Image();
+      this.listenImageStatus(this.maskLeaf);
       this.leafer.add(this.maskLeaf);
     }
     this.maskLeaf.set({

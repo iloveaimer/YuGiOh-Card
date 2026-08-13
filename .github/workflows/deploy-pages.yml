@@ -2,9 +2,9 @@ name: 自动构建部署
 
 on:
   push:
-    branches: [neos, main]
+    branches: [main]
     paths-ignore:
-      - 'docs/**'          # 避免 docs 提交触发循环构建
+      - 'docs/**'
       - 'release/**'
       - '*.md'
       - 'LICENSE'

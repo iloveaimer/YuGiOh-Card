@@ -25,6 +25,7 @@ export class Card {
   view = null;
   resourcePath = null;
   skia = null;
+  _imageErrors = new WeakSet();
 
   constructor(data = {}) {
     this.view = data.view;
@@ -52,8 +53,12 @@ export class Card {
   }
 
   setData(data = {}) {
-    // 使用解构赋值创建新对象，避免 reactive proxy 导致的数据污染
-    this.data = { ...this.data, ...data };
+    // 过滤 undefined 值，避免覆盖已有默认值（如 { arrowList: undefined } 覆盖 []）
+    const cleanData = {};
+    for (const key of Object.keys(data)) {
+      if (data[key] !== undefined) cleanData[key] = data[key];
+    }
+    this.data = { ...this.data, ...cleanData };
     this.draw();
   }
 
@@ -74,12 +79,15 @@ export class Card {
       return;
     }
     imageLeaf.on(ImageEvent.LOAD, () => {
+      this._imageErrors.delete(imageLeaf);
       this.drawImageStatus(imageLeaf, ImageEvent.LOAD);
     });
     imageLeaf.on(ImageEvent.LOADED, () => {
+      this._imageErrors.delete(imageLeaf);
       this.drawImageStatus(imageLeaf, ImageEvent.LOADED);
     });
     imageLeaf.on(ImageEvent.ERROR, () => {
+      this._imageErrors.add(imageLeaf);
       this.drawImageStatus(imageLeaf, ImageEvent.ERROR);
     });
   }
