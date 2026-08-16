@@ -7,6 +7,7 @@ import custom2Style from './style/custom2-style.js';
 import lsStyle from '../yugioh-card/style/ls-style.js';
 import lsfStyle from '../yugioh-card/style/lsf-style.js';
 import hklsw7Style from '../yugioh-card/style/hklsw7-style.js';
+import hklsw5Style from '../yugioh-card/style/hklsw5-style.js';
 import ktStyle from '../yugioh-card/style/kt-style.js';
 
 export class YugiohSeries2Card extends Card {
@@ -70,21 +71,19 @@ export class YugiohSeries2Card extends Card {
   }
 
   draw() {
-    this.drawCard();
-    this.drawName();
-    this.drawAttribute();
-    this.drawLevel();
-    this.drawSpellTrap();
-    this.drawImage();
-    this.drawMask();
-    this.drawPackage();
-    this.drawEffect();
-    this.drawDescription();
-    this.drawAtkDef();
-    this.drawPassword();
-    this.drawCopyright();
-    this.drawLaser();
-    this.updateScale();
+    const steps = [
+      'drawCard', 'drawName', 'drawAttribute', 'drawLevel',
+      'drawSpellTrap', 'drawImage', 'drawMask', 'drawPackage',
+      'drawEffect', 'drawDescription', 'drawAtkDef', 'drawPassword',
+      'drawCopyright', 'drawLaser', 'updateScale',
+    ];
+    for (const step of steps) {
+      try {
+        this[step]();
+      } catch (e) {
+        console.error(`[YugiohSeries2Card] ${step}() 渲染失败:`, e);
+      }
+    }
   }
 
   drawCard() {
@@ -479,6 +478,8 @@ export class YugiohSeries2Card extends Card {
         style = custom2Style;
       } else if (this.data.font === 'hklsw7') {
         style = hklsw7Style;
+      } else if (this.data.font === 'hklsw5') {
+        style = hklsw5Style;
       } else if (this.data.font === 'xlsj') {
         style = lsStyle;
       } else if (this.data.font === 'xlsf') {

@@ -20,13 +20,16 @@ const getNodeFs = () => {
   return nodeFs;
 };
 
+// 已保存的字体加载 Promise（同一路径复用，避免重复加载）
+const fontReadyPromiseMap = new Map();
+
 // 加载字体 - 浏览器环境，异步
 export const loadFontBrowser = fontPath => {
-  return new Promise((resolve, reject) => {
-    if (fontPathList.includes(fontPath)) {
-      resolve();
-      return;
-    }
+  // 已加载过则直接返回缓存 Promise，保证调用方都能等待同一份加载完成
+  if (fontReadyPromiseMap.has(fontPath)) {
+    return fontReadyPromiseMap.get(fontPath);
+  }
+  const promise = new Promise((resolve, reject) => {
     fontPathList.push(fontPath);
     fetch(`${fontPath}/font-list.json`).then(res => {
       if (res.ok) {
@@ -51,9 +54,13 @@ export const loadFontBrowser = fontPath => {
       await Promise.allSettled(fontLoadList);
       resolve();
     }).catch(() => {
+      // 加载失败时清除缓存，允许下次重试
+      fontReadyPromiseMap.delete(fontPath);
       reject('读取字体失败');
     });
   });
+  fontReadyPromiseMap.set(fontPath, promise);
+  return promise;
 };
 
 // 加载字体 - Nodejs 环境，同步
@@ -62,12 +69,23 @@ export const loadFontNode = (fontPath, skia) => {
     return;
   }
   fontPathList.push(fontPath);
-  const data = JSON.parse(getNodeFs().readFileSync(`${fontPath}/font-list.json`, 'utf-8'));
+  let data;
+  try {
+    data = JSON.parse(getNodeFs().readFileSync(`${fontPath}/font-list.json`, 'utf-8'));
+  } catch (e) {
+    // 字体清单读取失败（路径错误/文件缺失）时不中断卡片渲染，降级为系统字体
+    console.error(`[loadFontNode] 读取字体清单失败: ${fontPath}`, e);
+    return;
+  }
   if (skia) {
     data.forEach(family => {
-      skia.FontLibrary.use(family, [
-        `${fontPath}/${family}.woff2`,
-      ]);
+      try {
+        skia.FontLibrary.use(family, [
+          `${fontPath}/${family}.woff2`,
+        ]);
+      } catch (e) {
+        console.error(`[loadFontNode] 注册字体失败: ${family}`, e);
+      }
     });
   }
 };

@@ -8,45 +8,45 @@
         </div>
         <div class="preview-toolbar">
           <el-button-group>
-            <el-tooltip content="缩小" placement="bottom">
+            <el-tooltip :content="t('zoomOut')" placement="bottom">
               <el-button size="small" :icon="ZoomOut" @click="zoomOut" />
             </el-tooltip>
-            <el-tooltip content="放大" placement="bottom">
+            <el-tooltip :content="t('zoomIn')" placement="bottom">
               <el-button size="small" :icon="ZoomIn" @click="zoomIn" />
             </el-tooltip>
-            <el-tooltip content="重置缩放" placement="bottom">
+            <el-tooltip :content="t('resetZoom')" placement="bottom">
               <el-button size="small" :icon="RefreshRight" @click="resetZoom" />
             </el-tooltip>
           </el-button-group>
           <div class="zoom-text">{{ Math.round(formData.scale * 100) }}%</div>
           <div class="toolbar-spacer" />
-          <el-tooltip content="从 OCG 卡库随机调取一张真实卡片" placement="bottom">
+          <el-tooltip :content="t('randomTip')" placement="bottom">
             <el-button
               size="small"
               :icon="Coin"
               :loading="randomLoading"
               @click="randomGenerate"
             >
-              随机一卡
+              {{ t('randomOne') }}
             </el-button>
           </el-tooltip>
-          <el-tooltip content="扫描中文卡名/效果，一键打开日文读音查询" placement="bottom">
-            <el-button size="small" :icon="Reading" @click="autoPhonetic">注音</el-button>
+          <el-tooltip :content="t('phoneticTip')" placement="bottom">
+            <el-button size="small" :icon="Reading" @click="autoPhonetic">{{ t('phonetic') }}</el-button>
           </el-tooltip>
-          <el-tooltip content="从 JSON 文件导入卡数据" placement="bottom">
-            <el-button size="small" :icon="Upload" @click="importData">导入</el-button>
+          <el-tooltip :content="t('importTip')" placement="bottom">
+            <el-button size="small" :icon="Upload" @click="importData">{{ t('import') }}</el-button>
           </el-tooltip>
-          <el-tooltip content="导出当前卡片为 JSON 文件" placement="bottom">
-            <el-button size="small" :icon="Download" @click="exportData">导出</el-button>
+          <el-tooltip :content="t('exportTip')" placement="bottom">
+            <el-button size="small" :icon="Download" @click="exportData">{{ t('export') }}</el-button>
           </el-tooltip>
-          <el-tooltip content="重置为默认卡数据" placement="bottom">
-            <el-button size="small" :icon="RefreshLeft" @click="resetCard">重置</el-button>
+          <el-tooltip :content="t('resetTip')" placement="bottom">
+            <el-button size="small" :icon="RefreshLeft" @click="resetCard">{{ t('reset') }}</el-button>
           </el-tooltip>
           <el-select
             v-model="exportScale"
             size="small"
             style="width: 58px"
-            title="导出图片分辨率"
+            :title="t('exportScaleTitle')"
           >
             <el-option :value="0.5" label="0.5x" />
             <el-option :value="1" label="1x" />
@@ -61,7 +61,7 @@
             :icon="PictureFilled"
             @click="exportImage"
           >
-            导出图片
+            {{ t('exportImage') }}
           </el-button>
         </div>
       </div>
@@ -70,8 +70,69 @@
       <div class="param-panel">
         <!-- 顶部：标题 -->
         <div class="param-header">
-          <h2 class="param-title">游戏王卡片生成器 <span class="version-tag">v2.3.6</span></h2>
-          <p class="param-desc">YGO Card Markers</p>
+          <div class="param-header-row">
+            <h2 class="param-title">{{ t('title') }} <span class="version-tag">v{{ version }}</span></h2>
+            <el-dropdown trigger="click" @command="onUiLangChange">
+              <el-button size="small" text>
+                <el-icon style="margin-right: 2px;">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    aria-hidden="true"
+                  >
+                    <!-- 地球+经纬线，国际通用语言切换图标 -->
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <ellipse
+                      cx="12"
+                      cy="12"
+                      rx="4"
+                      ry="9"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <line
+                      x1="3"
+                      y1="12"
+                      x2="21"
+                      y2="12"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M3 12 Q12 6 21 12"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M3 12 Q12 18 21 12"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                  </svg>
+                </el-icon>
+                {{ uiLocale === 'zh-CN' ? '简体中文' : 'EN' }}
+                <el-icon><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="zh-CN" :disabled="uiLocale === 'zh-CN'">简体中文</el-dropdown-item>
+                  <el-dropdown-item command="en-US" :disabled="uiLocale === 'en-US'">English</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+          <p class="param-desc">{{ t('desc') }}</p>
         </div>
 
         <!-- 顶部：卡片类型切换 -->
@@ -92,49 +153,50 @@
           <div class="form-inner">
             <!-- 语言 -->
             <div class="field">
-              <label class="field-label">语言</label>
+              <label class="field-label">{{ t('language') }}</label>
               <el-select
                 v-model="formData.language"
                 size="default"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="简体中文" value="sc" />
-                <el-option label="繁体中文" value="tc" />
-                <el-option label="日语" value="jp" />
-                <el-option label="韩语" value="kr" />
-                <el-option label="英语" value="en" />
-                <el-option label="星光体" value="astral" />
+                <el-option :label="t('langSC')" value="sc" />
+                <el-option :label="t('langTC')" value="tc" />
+                <el-option :label="t('langJP')" value="jp" />
+                <el-option :label="t('langKR')" value="kr" />
+                <el-option :label="t('langEN')" value="en" />
+                <el-option :label="t('langAstral')" value="astral" />
               </el-select>
             </div>
 
             <!-- 字体 -->
             <div v-if="showFontSelect" class="field">
-              <label class="field-label">字体</label>
+              <label class="field-label">{{ t('font') }}</label>
               <el-select
                 v-model="formData.font"
-                placeholder="系统默认"
+                :placeholder="t('fontDefault')"
                 size="default"
                 style="width: 100%"
                 @change="setFont"
               >
-                <el-option label="系统默认" value="" />
-                <el-option label="华康隶书体" value="custom1" />
-                <el-option label="文鼎中粗隶简繁" value="custom2" />
-                <el-option label="细隶书简" value="xlsj" />
-                <el-option label="细隶书繁" value="xlsf" />
-                <el-option label="华康隶书" value="hklsw7" />
-                <el-option label="楷体" value="kt" />
+                <el-option :label="t('fontDefault')" value="" />
+                <el-option :label="t('fontCustom1')" value="custom1" />
+                <el-option :label="t('fontCustom2')" value="custom2" />
+                <el-option :label="t('fontXlsj')" value="xlsj" />
+                <el-option :label="t('fontXlsf')" value="xlsf" />
+                <el-option :label="t('fontHklsw7')" value="hklsw7" />
+                <el-option :label="t('fontHklsw5')" value="hklsw5" />
+                <el-option :label="t('fontKt')" value="kt" />
               </el-select>
             </div>
 
             <!-- 卡名 -->
             <div class="field">
-              <label class="field-label">卡名</label>
+              <label class="field-label">{{ t('name') }}</label>
               <el-input
                 v-model="formData.name"
                 size="default"
-                placeholder="输入卡片名称"
+                :placeholder="t('namePlaceholder')"
                 clearable
                 @input="scheduleUpdate()"
               />
@@ -142,7 +204,7 @@
 
             <!-- 卡名颜色 -->
             <div class="field">
-              <label class="field-label">卡名颜色</label>
+              <label class="field-label">{{ t('nameColor') }}</label>
               <div class="color-row">
                 <el-color-picker v-model="formData.color" size="default" @change="updateCard" />
                 <el-checkbox
@@ -151,9 +213,9 @@
                   style="margin-left: 8px"
                   @change="updateCard"
                 >
-                  渐变
+                  {{ t('gradient') }}
                 </el-checkbox>
-                <span class="color-tip">（自动选择清空）</span>
+                <span class="color-tip">{{ t('colorTip') }}</span>
               </div>
             </div>
 
@@ -161,11 +223,11 @@
             <template v-if="showNameGradient && formData.gradient">
               <div class="field-row">
                 <div class="field field-half">
-                  <label class="field-label">渐变色1</label>
+                  <label class="field-label">{{ t('gradientColor1') }}</label>
                   <el-color-picker v-model="formData.gradientColor1" size="default" @change="updateCard" />
                 </div>
                 <div class="field field-half">
-                  <label class="field-label">渐变色2</label>
+                  <label class="field-label">{{ t('gradientColor2') }}</label>
                   <el-color-picker v-model="formData.gradientColor2" size="default" @change="updateCard" />
                 </div>
               </div>
@@ -173,7 +235,7 @@
 
             <!-- 对齐：el-radio-group 与参考站一致 -->
             <div v-if="showNameAlign" class="field">
-              <label class="field-label">卡名对齐</label>
+              <label class="field-label">{{ t('nameAlign') }}</label>
               <el-radio-group v-model="formData.align" @change="updateCard">
                 <el-radio-button
                   v-for="opt in alignOptions"
@@ -188,7 +250,7 @@
 
             <!-- 类型：el-radio-group 与参考站一致 -->
             <div v-if="showCardAttr" class="field">
-              <label class="field-label">类型</label>
+              <label class="field-label">{{ t('type') }}</label>
               <el-radio-group v-model="formData.type" @change="setCardType">
                 <el-radio-button
                   v-for="opt in cardTypeChoices"
@@ -202,7 +264,7 @@
 
             <!-- 属性：下拉选择（8项太多，radio-group放不下） -->
             <div v-if="showAttribute" class="field">
-              <label class="field-label">属性</label>
+              <label class="field-label">{{ t('attribute') }}</label>
               <el-select
                 v-model="formData.attribute"
                 size="default"
@@ -220,7 +282,7 @@
 
             <!-- 卡图（图片上传/URL输入） -->
             <div v-if="showImage" class="field field-block">
-              <label class="field-label">卡图</label>
+              <label class="field-label">{{ t('image') }}</label>
               <div class="image-upload">
                 <div v-if="formData.image" class="image-preview">
                   <img :src="formData.image" class="preview-img" @error="onImageError">
@@ -241,82 +303,82 @@
                     class="upload-trigger"
                     @change="onFileUpload"
                   >
-                    <el-button size="small">选择图片</el-button>
+                    <el-button size="small">{{ t('chooseImage') }}</el-button>
                   </el-upload>
                   <el-input
                     v-model="imageUrl"
                     size="small"
-                    placeholder="或输入图片URL"
+                    :placeholder="t('imageUrlPlaceholder')"
                     clearable
                     style="flex: 1; min-width: 0"
                     @keyup.enter="setImageUrl"
                   />
-                  <el-button size="small" :icon="Link" @click="setImageUrl">确定</el-button>
+                  <el-button size="small" :icon="Link" @click="setImageUrl">{{ t('confirm') }}</el-button>
                 </div>
               </div>
             </div>
 
             <!-- 怪兽类型 -->
             <div v-if="showMonsterType" class="field">
-              <label class="field-label">卡类</label>
+              <label class="field-label">{{ t('cardType') }}</label>
               <el-select
                 v-model="formData.cardType"
                 size="default"
                 style="width: 100%"
                 @change="onCardTypeChange"
               >
-                <el-option label="通常" value="normal" />
-                <el-option label="效果" value="effect" />
-                <el-option label="仪式" value="ritual" />
-                <el-option label="融合" value="fusion" />
-                <el-option label="同调" value="synchro" />
-                <el-option label="超量" value="xyz" />
-                <el-option label="连接" value="link" />
+                <el-option :label="t('normal')" value="normal" />
+                <el-option :label="t('effect')" value="effect" />
+                <el-option :label="t('ritual')" value="ritual" />
+                <el-option :label="t('fusion')" value="fusion" />
+                <el-option :label="t('synchro')" value="synchro" />
+                <el-option :label="t('xyz')" value="xyz" />
+                <el-option :label="t('link')" value="link" />
               </el-select>
             </div>
 
             <!-- 灵摆类型 -->
             <div v-if="showPendulumType" class="field">
-              <label class="field-label">灵摆类型</label>
+              <label class="field-label">{{ t('pendulumType') }}</label>
               <el-select
                 v-model="formData.pendulumType"
                 size="default"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="通常灵摆" value="normal-pendulum" />
-                <el-option label="效果灵摆" value="effect-pendulum" />
-                <el-option label="仪式灵摆" value="ritual-pendulum" />
-                <el-option label="融合灵摆" value="fusion-pendulum" />
-                <el-option label="同调灵摆" value="synchro-pendulum" />
-                <el-option label="超量灵摆" value="xyz-pendulum" />
-                <el-option label="连接灵摆" value="link-pendulum" />
+                <el-option :label="t('normalPendulum')" value="normal-pendulum" />
+                <el-option :label="t('effectPendulum')" value="effect-pendulum" />
+                <el-option :label="t('ritualPendulum')" value="ritual-pendulum" />
+                <el-option :label="t('fusionPendulum')" value="fusion-pendulum" />
+                <el-option :label="t('synchroPendulum')" value="synchro-pendulum" />
+                <el-option :label="t('xyzPendulum')" value="xyz-pendulum" />
+                <el-option :label="t('linkPendulum')" value="link-pendulum" />
               </el-select>
             </div>
 
             <!-- 怪兽图标 -->
             <div v-if="showMonsterIcon" class="field">
-              <label class="field-label">图标</label>
+              <label class="field-label">{{ t('icon') }}</label>
               <el-select
                 v-model="formData.icon"
                 size="default"
                 clearable
-                placeholder="无"
+                :placeholder="t('none')"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="装备" value="equip" />
-                <el-option label="场地" value="field" />
-                <el-option label="速攻" value="quick-play" />
-                <el-option label="仪式" value="ritual" />
-                <el-option label="永续" value="continuous" />
-                <el-option label="反击" value="counter" />
+                <el-option :label="t('equip')" value="equip" />
+                <el-option :label="t('field')" value="field" />
+                <el-option :label="t('quickPlay')" value="quick-play" />
+                <el-option :label="t('ritual')" value="ritual" />
+                <el-option :label="t('continuous')" value="continuous" />
+                <el-option :label="t('counter')" value="counter" />
               </el-select>
             </div>
 
             <!-- 星级 / 阶级 -->
             <div v-if="showLevel || showRank" class="field">
-              <label class="field-label">{{ showRank ? '阶级' : '星级' }}</label>
+              <label class="field-label">{{ showRank ? t('rank') : t('level') }}</label>
               <el-input-number
                 v-model="formData.level"
                 :min="0"
@@ -328,7 +390,7 @@
 
             <!-- 灵摆刻度 -->
             <div v-if="showPendulumScale" class="field">
-              <label class="field-label">灵摆刻度</label>
+              <label class="field-label">{{ t('pendulumScale') }}</label>
               <el-input-number
                 v-model="formData.pendulumScale"
                 :min="0"
@@ -340,11 +402,11 @@
 
             <!-- 种族 / 类型 -->
             <div v-if="showMonsterTypeText" class="field">
-              <label class="field-label">种族</label>
+              <label class="field-label">{{ t('race') }}</label>
               <el-input
                 v-model="formData.monsterType"
                 size="default"
-                placeholder="例：龙/通常"
+                :placeholder="t('racePlaceholder')"
                 clearable
                 @input="scheduleUpdate()"
               />
@@ -391,13 +453,13 @@
 
             <!-- ATK/DEF 栏 -->
             <div v-if="showAtkBar" class="field">
-              <label class="field-label">ATK栏</label>
+              <label class="field-label">{{ t('atkBar') }}</label>
               <el-switch v-model="formData.atkBar" @change="updateCard" />
             </div>
 
             <!-- 连接箭头 -->
             <div v-if="showLinkArrows" class="field field-block">
-              <label class="field-label">连接标记</label>
+              <label class="field-label">{{ t('linkMarker') }}</label>
               <div class="arrow-grid">
                 <div
                   v-for="cell in arrowCells"
@@ -426,13 +488,13 @@
 
             <!-- 灵摆描述 -->
             <div v-if="showPendulumDesc" class="field">
-              <label class="field-label">灵摆描述</label>
+              <label class="field-label">{{ t('pendulumDesc') }}</label>
               <el-input
                 v-model="formData.pendulumDescription"
                 type="textarea"
                 :rows="2"
                 size="default"
-                placeholder="输入灵摆效果描述"
+                :placeholder="t('pendulumDescPlaceholder')"
                 clearable
                 @input="scheduleUpdate()"
               />
@@ -441,13 +503,13 @@
             <!-- 效果描述 (含 inline 开关) -->
             <div v-if="showDesc" class="field field-effect">
               <div class="effect-header">
-                <label class="field-label">效果</label>
+                <label class="field-label">{{ t('effect') }}</label>
                 <div class="switch-group">
                   <div class="switch-item">
                     <el-switch v-model="formData.firstLineCompress" size="small" @change="updateCard" />
-                    <span>首行压缩</span>
+                    <span>{{ t('firstLineCompress') }}</span>
                     <el-switch v-model="formData.descriptionAlign" size="small" @change="updateCard" />
-                    <span>文本居中</span>
+                    <span>{{ t('textCenter') }}</span>
                   </div>
                 </div>
               </div>
@@ -456,7 +518,7 @@
                 type="textarea"
                 :rows="3"
                 size="default"
-                placeholder="输入卡片效果描述"
+                :placeholder="t('effectPlaceholder')"
                 clearable
                 @input="scheduleUpdate()"
               />
@@ -464,7 +526,7 @@
 
             <!-- 字号 / 字重 -->
             <div v-if="showDesc" class="field field-slider">
-              <label class="field-label">字号</label>
+              <label class="field-label">{{ t('fontSize') }}</label>
               <div class="slider-wrap">
                 <el-slider
                   v-model="formData.descriptionZoom"
@@ -477,7 +539,7 @@
               </div>
             </div>
             <div v-if="showDesc" class="field field-slider">
-              <label class="field-label">字重</label>
+              <label class="field-label">{{ t('fontWeight') }}</label>
               <div class="slider-wrap">
                 <el-slider
                   v-model="formData.descriptionWeight"
@@ -495,22 +557,22 @@
             <!-- 高级：卡包 / 密码 -->
             <!-- 卡包 / 密码：参考参考站，卡包独占一行，密码独占一行且带搜索按钮 -->
             <div v-if="showPackage" class="field">
-              <label class="field-label">卡包</label>
+              <label class="field-label">{{ t('package') }}</label>
               <el-input
                 v-model="formData.package"
                 size="default"
-                placeholder="例：SD25-SC001"
+                :placeholder="t('packagePlaceholder')"
                 clearable
                 @input="scheduleUpdate()"
               />
             </div>
             <div v-if="showPassword" class="field">
-              <label class="field-label">密码</label>
+              <label class="field-label">{{ t('password') }}</label>
               <div class="password-row">
                 <el-input
                   v-model="formData.password"
                   size="default"
-                  placeholder="8位数字"
+                  :placeholder="t('passwordPlaceholder')"
                   clearable
                   @input="scheduleUpdate()"
                   @keyup.enter="searchPassword"
@@ -521,31 +583,31 @@
                   :loading="searchLoading"
                   @click="searchPassword"
                 >
-                  搜索
+                  {{ t('search') }}
                 </el-button>
               </div>
             </div>
             <div v-if="showPassword" class="field">
-              <label class="field-label">译名</label>
+              <label class="field-label">{{ t('translatedName') }}</label>
               <el-select
                 v-model="nameSource"
                 size="small"
                 style="width: 100%"
               >
-                <el-option label="YGOPro 译名" value="cn" />
-                <el-option label="简中官方译名" value="sc" />
-                <el-option label="Master Duel 译名" value="md" />
-                <el-option label="NWBBS 译名" value="nwbbs" />
-                <el-option label="CNOCG 译名" value="cnocg" />
+                <el-option :label="t('nameSourceCN')" value="cn" />
+                <el-option :label="t('nameSourceSC')" value="sc" />
+                <el-option :label="t('nameSourceMD')" value="md" />
+                <el-option :label="t('nameSourceNWBBS')" value="nwbbs" />
+                <el-option :label="t('nameSourceCNOCG')" value="cnocg" />
               </el-select>
             </div>
             <div v-if="showPassword" class="field">
-              <label class="field-label">卡名搜索</label>
+              <label class="field-label">{{ t('nameSearch') }}</label>
               <div class="password-row">
                 <el-input
                   v-model="nameSearchKeyword"
                   size="default"
-                  placeholder="按卡名搜索"
+                  :placeholder="t('nameSearchPlaceholder')"
                   clearable
                   @keyup.enter="searchByName"
                 />
@@ -555,34 +617,34 @@
                   :loading="nameSearchLoading"
                   @click="searchByName"
                 >
-                  搜索
+                  {{ t('search') }}
                 </el-button>
               </div>
             </div>
 
             <!-- 版权 / 罕贵 -->
             <div v-if="showCopyright" class="field">
-              <label class="field-label">版权</label>
+              <label class="field-label">{{ t('copyright') }}</label>
               <el-select
                 v-model="formData.copyright"
                 size="default"
                 clearable
-                placeholder="无"
+                :placeholder="t('none')"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="英文 (EN)" value="en" />
-                <el-option label="日文 (JP)" value="jp" />
-                <el-option label="简体 (SC)" value="sc" />
+                <el-option :label="t('copyrightEN')" value="en" />
+                <el-option :label="t('copyrightJP')" value="jp" />
+                <el-option :label="t('copyrightSC')" value="sc" />
               </el-select>
             </div>
             <div v-if="showRare" class="field">
-              <label class="field-label">罕贵</label>
+              <label class="field-label">{{ t('rare') }}</label>
               <el-select
                 v-model="formData.rare"
                 size="default"
                 clearable
-                placeholder="无"
+                :placeholder="t('none')"
                 style="width: 100%"
                 @change="updateCard"
               >
@@ -602,19 +664,19 @@
 
             <!-- 防伪标 -->
             <div v-if="showLaser" class="field">
-              <label class="field-label">防伪标</label>
+              <label class="field-label">{{ t('laser') }}</label>
               <el-select
                 v-model="formData.laser"
                 size="default"
                 clearable
-                placeholder="无"
+                :placeholder="t('none')"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="样式一" value="laser1" />
-                <el-option label="样式二" value="laser2" />
-                <el-option label="样式三" value="laser3" />
-                <el-option label="样式四" value="laser4" />
+                <el-option :label="t('laser1')" value="laser1" />
+                <el-option :label="t('laser2')" value="laser2" />
+                <el-option :label="t('laser3')" value="laser3" />
+                <el-option :label="t('laser4')" value="laser4" />
               </el-select>
             </div>
 
@@ -622,50 +684,50 @@
 
             <!-- 周年 -->
             <div v-if="showTwentieth" class="field">
-              <label class="field-label">周年</label>
+              <label class="field-label">{{ t('twentieth') }}</label>
               <el-select
                 v-model="formData.twentieth"
                 size="default"
                 clearable
-                placeholder="无"
+                :placeholder="t('none')"
                 style="width: 100%"
                 @change="updateCard"
               >
-                <el-option label="20周年" value="twentieth" />
-                <el-option label="25周年" value="twentyfive" />
+                <el-option :label="t('twentieth20')" value="twentieth" />
+                <el-option :label="t('twentieth25')" value="twentyfive" />
               </el-select>
             </div>
 
             <!-- 圆角 / 出框：参考参考站布局，单独两项 -->
             <div v-if="showRadius" class="field">
-              <label class="field-label">圆角</label>
+              <label class="field-label">{{ t('radius') }}</label>
               <el-switch v-model="formData.radius" @change="updateCard" />
             </div>
             <div v-if="showLegend" class="field">
-              <label class="field-label">传说卡</label>
+              <label class="field-label">{{ t('legend') }}</label>
               <el-switch v-model="formData.legend" @change="updateCard" />
             </div>
 
             <!-- 卡背特殊参数 -->
             <template v-if="isYugiohBack">
               <div class="field">
-                <label class="field-label">卡背类型</label>
+                <label class="field-label">{{ t('backType') }}</label>
                 <el-select
                   v-model="formData.type"
                   size="default"
                   style="width: 100%"
                   @change="updateCard"
                 >
-                  <el-option label="通常" value="normal" />
+                  <el-option :label="t('normal')" value="normal" />
                 </el-select>
               </div>
               <div class="field">
-                <label class="field-label">Logo</label>
+                <label class="field-label">{{ t('logo') }}</label>
                 <el-select
                   v-model="formData.logo"
                   size="default"
                   clearable
-                  placeholder="无"
+                  :placeholder="t('none')"
                   style="width: 100%"
                   @change="updateCard"
                 >
@@ -675,15 +737,15 @@
                 </el-select>
               </div>
               <div class="field">
-                <label class="field-label">卡背选项</label>
+                <label class="field-label">{{ t('backOptions') }}</label>
                 <div class="switch-group">
                   <div class="switch-item">
                     <el-switch v-model="formData.konami" @change="updateCard" />
-                    <span>Konami</span>
+                    <span>{{ t('konami') }}</span>
                   </div>
                   <div class="switch-item">
                     <el-switch v-model="formData.register" @change="updateCard" />
-                    <span>注册商标</span>
+                    <span>{{ t('register') }}</span>
                   </div>
                 </div>
               </div>
@@ -691,18 +753,18 @@
 
             <!-- 场地卡特殊参数 -->
             <div v-if="isFieldCenter" class="field">
-              <label class="field-label">场地选项</label>
+              <label class="field-label">{{ t('fieldOptions') }}</label>
               <div class="switch-group">
                 <div class="switch-item">
                   <el-switch v-model="formData.cardBack" @change="updateCard" />
-                  <span>卡背模式</span>
+                  <span>{{ t('backMode') }}</span>
                 </div>
               </div>
             </div>
 
             <!-- JSON 编辑器 -->
             <details class="json-section">
-              <summary>高级</summary>
+              <summary>{{ t('advanced') }}</summary>
               <json-editor-vue
                 v-model="jsonData"
                 style="width: 100%; height: 300px"
@@ -715,13 +777,14 @@
       </div>
     </div>
     <footer class="site-footer">
-      Powered by <a href="https://ygocdb.com/" target="_blank" rel="noopener">ygocdb.com</a> · <a href="http://www.ygotoken.com/" target="_blank" rel="noopener">ygotoken.com</a> · <a href="https://github.com/iloveaimer/YuGiOh-Card" target="_blank" rel="noopener">GitHub</a>
+      Powered by <a href="https://ygocdb.com/" target="_blank" rel="noopener">ygocdb.com</a> · <a href="https://ygoprodeck.com/" target="_blank" rel="noopener">ygoprodeck.com</a> · <a href="http://www.ygotoken.com/" target="_blank" rel="noopener">ygotoken.com</a> · <a href="https://github.com/iloveaimer/YuGiOh-Card" target="_blank" rel="noopener">GitHub</a>
     </footer>
   </div>
 </template>
 
 <script setup>
 import {
+  ArrowDown,
   Close,
   Coin,
   Download,
@@ -738,6 +801,8 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, toRaw,
 import { ElMessage } from 'element-plus';
 import { FieldCenterCard, RushDuelCard, YugiohBackCard, YugiohCard, YugiohSeries2Card } from 'yugioh-card';
 import JsonEditorVue from 'json-editor-vue';
+import { t, setLocale, useUiLocale } from '@/i18n';
+import { version } from '../../package.json';
 import fieldCenterDemo from '@/assets/demo/field-center-demo';
 import rushDuelDemo from '@/assets/demo/rush-duel-demo';
 import yugiohBackDemo from '@/assets/demo/yugioh-back-demo';
@@ -747,35 +812,40 @@ import yugiohSeries2Demo from '@/assets/demo/yugioh-series-2-demo';
 const card = ref(null);
 const cardLeaf = shallowRef(null);
 const exportScale = ref(3);
+const uiLocale = useUiLocale();
 
 const form = reactive({
   card: 'yugioh',
 });
 
-const cardTypeOptions = [
-  { label: '游戏王', value: 'yugioh' },
-  { label: '超速决斗', value: 'rush-duel' },
-  { label: '卡背', value: 'yugioh-back' },
-  { label: '场地', value: 'field-center' },
-  { label: '2期', value: 'yugioh-series-2' },
-];
+const onUiLangChange = lang => {
+  setLocale(lang);
+};
 
-const alignOptions = [
-  { label: '左对齐', value: 'left' },
-  { label: '居中', value: 'center' },
-  { label: '右对齐', value: 'right' },
-];
+const cardTypeOptions = computed(() => [
+  { label: t('cardYugioh'), value: 'yugioh' },
+  { label: t('cardRushDuel'), value: 'rush-duel' },
+  { label: t('cardBack'), value: 'yugioh-back' },
+  { label: t('cardField'), value: 'field-center' },
+  { label: t('cardSeries2'), value: 'yugioh-series-2' },
+]);
 
-const attributeOptions = [
-  { label: '无', value: '' },
-  { label: '暗', value: 'dark' },
-  { label: '光', value: 'light' },
-  { label: '地', value: 'earth' },
-  { label: '水', value: 'water' },
-  { label: '炎', value: 'fire' },
-  { label: '风', value: 'wind' },
-  { label: '神', value: 'divine' },
-];
+const alignOptions = computed(() => [
+  { label: t('alignLeft'), value: 'left' },
+  { label: t('alignCenter'), value: 'center' },
+  { label: t('alignRight'), value: 'right' },
+]);
+
+const attributeOptions = computed(() => [
+  { label: t('attrNone'), value: '' },
+  { label: t('attrDark'), value: 'dark' },
+  { label: t('attrLight'), value: 'light' },
+  { label: t('attrEarth'), value: 'earth' },
+  { label: t('attrWater'), value: 'water' },
+  { label: t('attrFire'), value: 'fire' },
+  { label: t('attrWind'), value: 'wind' },
+  { label: t('attrDivine'), value: 'divine' },
+]);
 
 const formData = reactive({ ...yugiohDemo, scale: 0.5, twentieth: yugiohDemo.twentieth || '', exportScale: yugiohDemo.exportScale || 1, watermark: yugiohDemo.watermark || '' });
 const jsonData = ref('');
@@ -793,16 +863,16 @@ const isYugiohSeries2 = computed(() => form.card === 'yugioh-series-2');
 const cardTypeChoices = computed(() => {
   if (isRushDuel.value) {
     return [
-      { label: '怪兽', value: 'monster' },
-      { label: '魔法', value: 'spell' },
-      { label: '陷阱', value: 'trap' },
+      { label: t('monster'), value: 'monster' },
+      { label: t('spell'), value: 'spell' },
+      { label: t('trap'), value: 'trap' },
     ];
   }
   return [
-    { label: '怪兽', value: 'monster' },
-    { label: '魔法', value: 'spell' },
-    { label: '陷阱', value: 'trap' },
-    ...(isYugioh.value ? [{ label: '灵摆', value: 'pendulum' }] : []),
+    { label: t('monster'), value: 'monster' },
+    { label: t('spell'), value: 'spell' },
+    { label: t('trap'), value: 'trap' },
+    ...(isYugioh.value ? [{ label: t('pendulum'), value: 'pendulum' }] : []),
   ];
 });
 
@@ -882,17 +952,55 @@ const observeCanvas = () => {
 };
 
 
-// 语言切换自动载入对应 Demo数据
+// 默认示例卡（青眼白龙）各语言的完整数据，切换语言时同步切换（避免中文文本用英文字体渲染乱码）
+const DEFAULT_CARD_BY_LANG = {
+  sc: {
+    name: '青眼白龙',
+    monsterType: '龙族/通常',
+    description: '以高攻击力著称的传说之龙。任何对手都能将之粉碎，其破坏力不可估量。',
+  },
+  tc: {
+    name: '青眼白龍',
+    monsterType: '龍族/通常',
+    description: '以高攻擊力著稱的傳說之龍。任何對手都能將之粉碎，其破壞力不可估量。',
+  },
+  jp: {
+    name: '青眼の白龍',
+    monsterType: 'ドラゴン族/通常',
+    description: '高い攻撃力を誇る伝説のドラゴン。どんな相手でも粉砕する、その破壊力は計り知れない。',
+  },
+  en: {
+    name: 'Blue-Eyes White Dragon',
+    monsterType: 'Dragon/Normal',
+    description: 'This legendary dragon is a powerful engine of destruction. Virtually invincible, very few have faced this awesome creature and lived to tell the tale.',
+  },
+  kr: {
+    name: '푸른 눈의 백룡',
+    monsterType: '드래곤족/일반',
+    description: '높은 공격력을 자랑하는 전설의 드래곤. 어떤 상대든 박살내는, 그 파괴력은 이루 헤아릴 수 없다.',
+  },
+  astral: {
+    name: 'ブルーアイズ・ホワイト・ドラゴン',
+    monsterType: 'ドラゴン族/通常',
+    description: '高い攻撃力を誇る伝説のドラゴン。どんな相手でも粉砕する、その破壊力は計り知れない。',
+  },
+};
+
+// 语言切换：已检索到具体卡片（有有效卡密）时，自动用新语言静默重新检索，实现卡名/描述/种族随语言切换
 watch(() => formData.language, lang => {
-  if (lang === 'jp' && formData.name === '青眼白龙') {
-    formData.name = '青眼の白龍';
-    formData.description = '高い攻撃力を誇る伝説のドラゴン。どんな相手でも粉砕する、その破壊力は計り知れない。';
-  } else if (lang === 'sc' && formData.name === '青眼の白龍') {
-    formData.name = '青眼白龙';
-    formData.description = '以高攻击力著称的传说之龙。无论对手是谁都能粉碎，其破坏力不可估量。';
-  } else if (lang === 'en' && formData.name === '青眼白龙') {
-    formData.name = 'Blue-Eyes White Dragon';
-    formData.description = 'This legendary dragon is a powerful engine of destruction. Virtually invincible, very few have faced this awesome creature and lived to tell the tale.';
+  const pwd = (formData.password || '').trim();
+  // 有有效卡密：说明当前卡片来自检索，用新语言重新拉取对应数据（静默，不弹提示）
+  if (/^\d{6,8}$/.test(pwd)) {
+    searchPassword(true);
+    return;
+  }
+  // 否则是默认示例卡（无有效卡密）：同步切换各语言完整数据，避免中文文本用英文字体渲染乱码
+  const isDefaultName = ['青眼白龙', '青眼白龍', '青眼の白龍', 'Blue-Eyes White Dragon', '푸른 눈의 백룡', 'ブルーアイズ・ホワイト・ドラゴン'].includes(formData.name);
+  if (isDefaultName && DEFAULT_CARD_BY_LANG[lang]) {
+    const d = DEFAULT_CARD_BY_LANG[lang];
+    formData.name = d.name;
+    formData.monsterType = d.monsterType;
+    formData.description = d.description;
   }
   updateCard();
 });
@@ -957,14 +1065,8 @@ const changeCard = cardType => {
 };
 
 
-const setFont = font => {
-  formData.font = font;
-  // 简体隶书 → 简中，繁体隶书 → 繁中
-  if (font === 'xlsj' || font === 'hklsw7') {
-    formData.language = 'sc';
-  } else if (font === 'xlsf') {
-    formData.language = 'tc';
-  }
+// 选择字体：只改字体并重绘（语言与字体完全解耦，互不影响）
+const setFont = () => {
   updateCard();
 };
 
@@ -995,11 +1097,8 @@ const updateCard = () => {
   }
   if (cardLeaf.value) {
     // toRaw 确保将 reactive proxy 转为纯对象传入，避免 Leafer 内部 Proxy 干扰
+    // setData 内部会调用 draw()，而 draw() 最后一步已含 updateScale()，无需重复调用
     cardLeaf.value.setData({ ...toRaw(formData) });
-    // 强制同步缩放，确保渲染刷新
-    if (cardLeaf.value.updateScale) {
-      cardLeaf.value.updateScale();
-    }
   }
   jsonData.value = JSON.stringify(formData, null, 2);
 };
@@ -1011,7 +1110,7 @@ const resetCard = () => {
   Object.assign(formData, demo);
   cardLeaf.value?.setData(demo);
   jsonData.value = JSON.stringify(demo, null, 2);
-  ElMessage.success('已重置');
+  ElMessage.success(t('resetSuccess'));
 };
 
 const exportImage = () => {
@@ -1035,7 +1134,7 @@ const exportData = () => {
   a.download = `${name}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  ElMessage.success('数据已导出');
+  ElMessage.success(t('exportSuccess'));
 };
 
 // 导入 JSON 数据
@@ -1059,9 +1158,9 @@ const importData = () => {
           cardLeaf.value.setData(merged);
         }
         jsonData.value = JSON.stringify(merged, null, 2);
-        ElMessage.success('数据已导入');
+        ElMessage.success(t('importSuccess'));
       } catch (err) {
-        ElMessage.error('JSON 格式错误，导入失败');
+        ElMessage.error(t('importError'));
       }
     };
     reader.readAsText(file);
@@ -1126,9 +1225,8 @@ const clearImage = () => {
 };
 
 const onImageError = () => {
-  formData.image = '';
-  updateCard();
-  ElMessage.warning('图片加载失败，已清除');
+  // 图片加载失败仅提示，不自动清空：网络抖动/临时失败时保留用户输入，由用户自行决定（可点移除按钮）
+  ElMessage.warning(t('imageError'));
 };
 
 // 连接箭头
@@ -1160,7 +1258,7 @@ const randomGenerate = async () => {
     formData.password = String(id);
     await searchPassword();
   } catch {
-    ElMessage.error('随机生成失败，请重试');
+    ElMessage.error(t('randomFail'));
   } finally {
     randomLoading.value = false;
   }
@@ -1169,36 +1267,92 @@ const randomGenerate = async () => {
 // ──────────────────────────────────────────────
 // 密码搜索：调用 ygocdb.com API 自动填充卡片数据
 // ──────────────────────────────────────────────
-const RACE_CN = {
-  1: '战士族', 2: '魔法师族', 4: '天使族', 8: '恶魔族',
-  16: '不死族', 32: '机械族', 64: '水族', 128: '炎族',
-  256: '岩石族', 512: '鸟兽族', 1024: '植物族', 2048: '昆虫族',
-  4096: '雷族', 8192: '龙族', 16384: '兽族', 32768: '兽战士族',
-  65536: '恐龙族', 131072: '鱼族', 262144: '海龙族', 524288: '爬虫类族',
-  1048576: '念动力族', 2097152: '幻龙族', 4194304: '电子界族', 8388608: '幻神兽族',
-  16777216: '电子界族', // ygotoken 编码
+const RACE_MAP = {
+  sc: { 1: '战士族', 2: '魔法师族', 4: '天使族', 8: '恶魔族', 16: '不死族', 32: '机械族', 64: '水族', 128: '炎族', 256: '岩石族', 512: '鸟兽族', 1024: '植物族', 2048: '昆虫族', 4096: '雷族', 8192: '龙族', 16384: '兽族', 32768: '兽战士族', 65536: '恐龙族', 131072: '鱼族', 262144: '海龙族', 524288: '爬虫类族', 1048576: '念动力族', 2097152: '幻龙族', 4194304: '电子界族', 8388608: '幻神兽族', 16777216: '创造神族' },
+  tc: { 1: '戰士族', 2: '魔法師族', 4: '天使族', 8: '惡魔族', 16: '不死族', 32: '機械族', 64: '水族', 128: '炎族', 256: '岩石族', 512: '鳥獸族', 1024: '植物族', 2048: '昆蟲族', 4096: '雷族', 8192: '龍族', 16384: '獸族', 32768: '獸戰士族', 65536: '恐龍族', 131072: '魚族', 262144: '海龍族', 524288: '爬蟲類族', 1048576: '念動力族', 2097152: '幻龍族', 4194304: '電子界族', 8388608: '幻神獸族', 16777216: '創造神族' },
+  jp: { 1: '戦士族', 2: '魔法使い族', 4: '天使族', 8: '悪魔族', 16: 'アンデット族', 32: '機械族', 64: '水族', 128: '炎族', 256: '岩石族', 512: '鳥獣族', 1024: '植物族', 2048: '昆虫族', 4096: '雷族', 8192: 'ドラゴン族', 16384: '獣族', 32768: '獣戦士族', 65536: '恐竜族', 131072: '魚族', 262144: '海竜族', 524288: '爬虫類族', 1048576: 'サイキック族', 2097152: '幻竜族', 4194304: 'サイバース族', 8388608: '幻神獣族', 16777216: '創造神族' },
+  en: { 1: 'Warrior', 2: 'Spellcaster', 4: 'Fairy', 8: 'Fiend', 16: 'Zombie', 32: 'Machine', 64: 'Aqua', 128: 'Pyro', 256: 'Rock', 512: 'Winged Beast', 1024: 'Plant', 2048: 'Insect', 4096: 'Thunder', 8192: 'Dragon', 16384: 'Beast', 32768: 'Beast-Warrior', 65536: 'Dinosaur', 131072: 'Fish', 262144: 'Sea Serpent', 524288: 'Reptile', 1048576: 'Psychic', 2097152: 'Wyrm', 4194304: 'Cyberse', 8388608: 'Divine-Beast', 16777216: 'Creator God' },
+  kr: { 1: '전사족', 2: '마법사족', 4: '천사족', 8: '악마족', 16: '언데드족', 32: '기계족', 64: '물족', 128: '화염족', 256: '암석족', 512: '비행야수족', 1024: '식물족', 2048: '곤충족', 4096: '번개족', 8192: '드래곤족', 16384: '야수족', 32768: '야수전사족', 65536: '공룡족', 131072: '어류족', 262144: '해룡족', 524288: '파충류족', 1048576: '사이킥족', 2097152: '환룡족', 4194304: '사이버스족', 8388608: '환신야수족', 16777216: '창조신족' },
 };
+
+// 类型标签多语言映射（怪兽子类型/效果分类）
+const TYPE_LABELS = {
+  sc: { tuner: '协调', spirit: '灵魂', union: '同盟', gemini: '二重', toon: '卡通', flip: '反转', link: '连接', xyz: '超量', synchro: '同调', fusion: '融合', ritual: '仪式', effect: '效果', normal: '通常', pendulum: '灵摆' },
+  tc: { tuner: '協調', spirit: '靈魂', union: '同盟', gemini: '二重', toon: '卡通', flip: '反轉', link: '連接', xyz: '超量', synchro: '同步', fusion: '融合', ritual: '儀式', effect: '效果', normal: '通常', pendulum: '靈擺' },
+  jp: { tuner: 'チューナー', spirit: 'スピリット', union: 'ユニオン', gemini: 'デュアル', toon: 'トゥーン', flip: 'リバース', link: 'リンク', xyz: 'エクシーズ', synchro: 'シンクロ', fusion: '融合', ritual: '儀式', effect: '効果', normal: '通常', pendulum: 'ペンデュラム' },
+  en: { tuner: 'Tuner', spirit: 'Spirit', union: 'Union', gemini: 'Gemini', toon: 'Toon', flip: 'Flip', link: 'Link', xyz: 'Xyz', synchro: 'Synchro', fusion: 'Fusion', ritual: 'Ritual', effect: 'Effect', normal: 'Normal', pendulum: 'Pendulum' },
+  kr: { tuner: '튜너', spirit: '스피릿', union: '유니온', gemini: '듀얼', toon: '툰', flip: '리버스', link: '링크', xyz: '엑시즈', synchro: '싱크로', fusion: '융합', ritual: '의식', effect: '효과', normal: '일반', pendulum: '펜듈럼' },
+};
+
 const ATTR_KEY = { 1: 'earth', 2: 'water', 4: 'fire', 8: 'wind', 16: 'light', 32: 'dark', 64: 'divine' };
 
-const parseOcgType = code => {
+// ygoprodeck 英文数据源字段映射（用于英文描述的完整数据）
+const YGOPRODECK_ATTR = { LIGHT: 'light', DARK: 'dark', EARTH: 'earth', WATER: 'water', FIRE: 'fire', WIND: 'wind', DIVINE: 'divine' };
+// ygoprodeck linkmarkers → 项目 arrowList 数字（1上 2右上 3右 4右下 5下 6左下 7左 8左上）
+const YGOPRODECK_MARKERS = { Top: 1, 'Top-Right': 2, Right: 3, 'Bottom-Right': 4, Bottom: 5, 'Bottom-Left': 6, Left: 7, 'Top-Left': 8 };
+// ygoprodeck frameType → [主类型, 卡类]
+const YGOPRODECK_FRAME = {
+  normal: ['monster', 'normal'],
+  effect: ['monster', 'effect'],
+  ritual: ['monster', 'ritual'],
+  fusion: ['monster', 'fusion'],
+  synchro: ['monster', 'synchro'],
+  xyz: ['monster', 'xyz'],
+  link: ['monster', 'link'],
+  spell: ['spell', 'normal'],
+  trap: ['trap', 'normal'],
+  normal_pendulum: ['pendulum', 'normal-pendulum'],
+  effect_pendulum: ['pendulum', 'effect-pendulum'],
+  ritual_pendulum: ['pendulum', 'ritual-pendulum'],
+  fusion_pendulum: ['pendulum', 'fusion-pendulum'],
+  synchro_pendulum: ['pendulum', 'synchro-pendulum'],
+  xyz_pendulum: ['pendulum', 'xyz-pendulum'],
+};
+// ygoprodeck 魔法/陷阱 race → 项目 icon
+const YGOPRODECK_ICON = { Field: 'field', Equip: 'equip', Continuous: 'continuous', 'Quick-Play': 'quick-play', Ritual: 'ritual', Counter: 'counter', Normal: '' };
+
+const getRaceName = (raceCode, lang) => {
+  const map = RACE_MAP[lang] || RACE_MAP.sc;
+  return map[raceCode] || '';
+};
+
+const getTypeLabels = lang => TYPE_LABELS[lang] || TYPE_LABELS.sc;
+
+const parseOcgType = (code, lang = 'sc') => {
+  const L = getTypeLabels(lang);
   if (code & 0x2) return { type: 'spell', labels: [] };
   if (code & 0x4) return { type: 'trap', labels: [] };
   const result = { type: 'monster', labels: [], cardType: '' };
   if (code & 0x1000000) result.type = 'pendulum';
-  if (code & 0x1000) result.labels.push('协调');
-  if (code & 0x200) result.labels.push('灵魂');
-  if (code & 0x400) result.labels.push('同盟');
-  if (code & 0x800) result.labels.push('二重');
-  if (code & 0x8000) result.labels.push('卡通');
-  if (code & 0x200000) result.labels.push('反转');
-  if (code & 0x4000000) { result.labels.push('连接'); result.cardType = 'link'; }
-  else if (code & 0x800000) { result.labels.push('超量'); result.cardType = 'xyz'; }
-  else if (code & 0x2000) { result.labels.push('同调'); result.cardType = 'synchro'; }
-  else if (code & 0x40) { result.labels.push('融合'); result.cardType = 'fusion'; }
-  else if (code & 0x80) { result.labels.push('仪式'); result.cardType = 'ritual'; }
-  if (code & 0x20 || result.labels.length) { result.labels.push('效果'); result.cardType = result.cardType || 'effect'; }
-  else { result.labels.push('通常'); result.cardType = 'normal'; }
+  if (code & 0x1000) result.labels.push(L.tuner);
+  if (code & 0x200) result.labels.push(L.spirit);
+  if (code & 0x400) result.labels.push(L.union);
+  if (code & 0x800) result.labels.push(L.gemini);
+  if (code & 0x8000) result.labels.push(L.toon);
+  if (code & 0x200000) result.labels.push(L.flip);
+  if (code & 0x4000000) { result.labels.push(L.link); result.cardType = 'link'; }
+  else if (code & 0x800000) { result.labels.push(L.xyz); result.cardType = 'xyz'; }
+  else if (code & 0x2000) { result.labels.push(L.synchro); result.cardType = 'synchro'; }
+  else if (code & 0x40) { result.labels.push(L.fusion); result.cardType = 'fusion'; }
+  else if (code & 0x80) { result.labels.push(L.ritual); result.cardType = 'ritual'; }
+  if (code & 0x20 || result.labels.length) { result.labels.push(L.effect); result.cardType = result.cardType || 'effect'; }
+  else { result.labels.push(L.normal); result.cardType = 'normal'; }
   return result;
+};
+
+// 构建 ygotoken 卡图 URL（三环境：DEV 代理 / HTTPS 用 weserv 桥接 / HTTP·EXE 直连）
+const getYgotokenImageUrl = cid => {
+  if (!cid) return '';
+  if (import.meta.env.DEV) {
+    // 开发环境：Vite 代理转发到 ygotoken，避免 CORS
+    return `/ygotoken-img/webp/${cid}.webp`;
+  }
+  if (window.location.protocol === 'https:') {
+    // GitHub Pages 等 HTTPS 静态托管：通过 weserv 代理桥接 HTTP 源，解决混合内容拦截
+    return `https://images.weserv.nl/?url=www.ygotoken.com/images/webp/${cid}.webp`;
+  }
+  // EXE（file://）或 HTTP 环境：直连 ygotoken
+  return `http://www.ygotoken.com/images/webp/${cid}.webp`;
 };
 
 // 加载 ygotoken 全量卡片缓存（仅用于 cid→卡图 和 补充译名）
@@ -1206,7 +1360,12 @@ let ygotokenCache = null;
 const loadYgotokenCache = async () => {
   if (ygotokenCache) return ygotokenCache;
   try {
-    const url = import.meta.env.DEV ? '/ygotoken-api/api/cards' : 'https://www.ygotoken.com/api/cards';
+    // ygotoken 站点仅支持 http；HTTPS 静态页无法直连（主路径 ygocdb 已提供 cid，此处仅兜底）
+    const url = import.meta.env.DEV
+      ? '/ygotoken-api/api/cards'
+      : (window.location.protocol === 'https:'
+        ? 'https://www.ygotoken.com/api/cards'
+        : 'http://www.ygotoken.com/api/cards');
     const resp = await fetch(url);
     ygotokenCache = await resp.json();
     return ygotokenCache;
@@ -1216,38 +1375,158 @@ const loadYgotokenCache = async () => {
   }
 };
 
-const searchPassword = async () => {
-  const pwd = (formData.password || '').trim();
-  if (!pwd) { ElMessage.warning('请先输入卡密'); return; }
-  if (!/^\d{6,8}$/.test(pwd)) { ElMessage.warning('卡密应为 6-8 位数字'); return; }
-  searchLoading.value = true;
+// 英文卡片数据搜索：使用 ygoprodeck 公开 API（含英文名、英文描述、英文种族、卡图）
+const searchPasswordEn = async (pwd, silent = false) => {
   try {
+    const resp = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${pwd}`, { cache: 'no-cache' });
+    const result = await resp.json();
+    const card = result?.data?.[0];
+    if (!card) { if (!silent) ElMessage.warning(t('passwordNotFound')); return; }
+
+    // frameType 映射主类型 + 卡类
+    const [mainType, cardTypeOrPendulum] = YGOPRODECK_FRAME[card.frameType] || ['monster', 'normal'];
+    formData.type = mainType;
+    formData.attribute = YGOPRODECK_ATTR[card.attribute] || '';
+
+    // 卡名：ygoprodeck 的 name 即英文名
+    formData.name = card.name || '';
+
+    // 种族/类型：模拟官方英文卡的卡框显示（Dragon/Normal、Dragon/Fusion/Effect、Dragon/Pendulum/Effect 等）
+    // - type 字符串如 "Pendulum Effect Monster" / "Fusion Monster" / "Normal Spell"
+    // - 去掉包框词 Monster/Spell/Trap，再按单词切分并转 Title Case（首字母大写，对齐官方英文卡）
+    const englishType = (card.type || '').replace(/\b(Monster|Spell|Trap)\b/g, '').trim();
+    const typeParts = englishType.split(' ').filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
+    formData.monsterType = [card.race, ...typeParts].filter(Boolean).join('/');
+
+    // ATK/DEF/等级/阶级
+    formData.atk = card.atk ?? 0;
+    formData.def = card.def ?? 0;
+
+    if (mainType === 'pendulum') {
+      // 灵摆卡：cardTypeOrPendulum 是 pendulumType（如 normal-pendulum）
+      formData.pendulumType = cardTypeOrPendulum;
+      formData.cardType = cardTypeOrPendulum.replace('-pendulum', '');
+      formData.pendulumScale = card.scale ?? 0;
+      formData.level = card.level ?? 0;
+      formData.rank = 0;
+      formData.arrowList = [];
+      // 灵摆卡：ygoprodeck 提供独立的 pend_desc / monster_desc 字段，直接使用
+      formData.pendulumDescription = (card.pend_desc || '').trim();
+      formData.description = (card.monster_desc || '').trim();
+    } else if (mainType === 'monster') {
+      formData.cardType = cardTypeOrPendulum;
+      formData.pendulumScale = 0;
+      formData.pendulumType = 'normal-pendulum';
+      formData.pendulumDescription = '';
+      formData.description = card.desc || '';
+      if (cardTypeOrPendulum === 'xyz') {
+        formData.rank = card.level ?? 0;
+        formData.level = 0;
+        formData.arrowList = [];
+      } else if (cardTypeOrPendulum === 'link') {
+        formData.level = card.linkval ?? 0;
+        formData.rank = 0;
+        formData.arrowList = (card.linkmarkers || []).map(m => YGOPRODECK_MARKERS[m]).filter(Boolean);
+      } else {
+        formData.level = card.level ?? 0;
+        formData.rank = 0;
+        formData.arrowList = [];
+      }
+    } else {
+      // 魔法/陷阱
+      formData.cardType = 'normal';
+      formData.pendulumScale = 0;
+      formData.pendulumType = 'normal-pendulum';
+      formData.pendulumDescription = '';
+      formData.description = card.desc || '';
+      formData.level = 0;
+      formData.rank = 0;
+      formData.arrowList = [];
+      formData.icon = YGOPRODECK_ICON[card.race] ?? '';
+    }
+
+    formData.atkBar = mainType === 'monster' || mainType === 'pendulum';
+
+    // 卡图：统一走 ygotoken（与中文模式一致），需通过 ygocdb 拿 cid
+    let cid = null;
+    try {
+      const ygocdbResp = await fetch(`https://ygocdb.com/api/v0/card/${pwd}?show=all`, { cache: 'no-cache' });
+      const ygocdb = await ygocdbResp.json();
+      cid = ygocdb?.cid || null;
+      if (!cid) {
+        const cache = await loadYgotokenCache();
+        const ygocard = cache.find(c => String(c.id) === pwd);
+        if (ygocard) cid = ygocard.cid || null;
+      }
+    } catch { /* 忽略 cid 查找失败 */ }
+
+    if (cid) {
+      formData.image = getYgotokenImageUrl(cid);
+    } else {
+      formData.image = '';
+      if (!silent) ElMessage.warning(t('noImage'));
+    }
+
+    updateCard();
+    if (!silent) ElMessage.success(`${t('randomOne')}: ${formData.name}`);
+  } catch {
+    if (!silent) ElMessage.error(t('networkError'));
+  } finally {
+    searchLoading.value = false;
+  }
+};
+
+const searchPassword = async (silent = false) => {
+  const pwd = (formData.password || '').trim();
+  if (!pwd) { if (!silent) ElMessage.warning(t('pleaseInputPassword')); return; }
+  if (!/^\d{6,8}$/.test(pwd)) { if (!silent) ElMessage.warning(t('passwordInvalid')); return; }
+  if (!silent) searchLoading.value = true;
+  try {
+    const lang = formData.language || 'sc';
+
+    // 英文模式：使用 ygoprodeck 公开英文数据源（含英文描述）
+    if (lang === 'en') {
+      await searchPasswordEn(pwd, silent);
+      return;
+    }
+
     // 主数据源：百鸽 API ?show=all（顶层含全译名 + text.types 含箭头）
     const ygocdbResp = await fetch(`https://ygocdb.com/api/v0/card/${pwd}?show=all`, { cache: 'no-cache' });
     const ygocdb = await ygocdbResp.json();
-    if (!ygocdb?.data) { ElMessage.warning('未找到该卡密'); return; }
+    if (!ygocdb?.data) { ElMessage.warning(t('passwordNotFound')); return; }
 
     const ocgData = ygocdb.data;
     const textData = ygocdb.text || {};
-    const { type: mainType, labels, cardType: subType } = parseOcgType(ocgData.type);
-    const raceName = RACE_CN[ocgData.race] || '';
+    const { type: mainType, labels, cardType: subType } = parseOcgType(ocgData.type, lang);
+    const raceName = getRaceName(ocgData.race, lang);
     const attrKey = ATTR_KEY[ocgData.attribute] || '';
     const hasPendulum = mainType === 'pendulum';
+    const L = getTypeLabels(lang);
     const raceText = raceName ? (
       hasPendulum
-        ? `${raceName}/${labels.filter(l => l !== '效果' && l !== '通常').join('/')}${labels.some(l => l !== '通常') ? '/灵摆/' : '/'}${labels.includes('通常') ? '通常' : '效果'}`.replace(/\/+/g, '/')
+        ? `${raceName}/${labels.filter(l => l !== L.effect && l !== L.normal).join('/')}${labels.some(l => l !== L.normal) ? `/${L.pendulum}/` : '/'}${labels.includes(L.normal) ? L.normal : L.effect}`.replace(/\/+/g, '/')
         : `${raceName}/${labels.join('/')}`
     ) : '';
 
-    // 译名：?show=all 在顶层提供全译名
-    const nameMap = {
-      cn: ygocdb.cn_name || ygocdb.cnocg_n || ygocdb.nwbbs_n,
-      nwbbs: ygocdb.nwbbs_n,
-      cnocg: ygocdb.cnocg_n,
-      sc: ygocdb.sc_name,
-      md: ygocdb.md_name,
-    };
-    formData.name = nameMap[nameSource.value] || ygocdb.cn_name || ygocdb.sc_name || '';
+    // 卡名：英文/日文直接取对应语言字段；韩文接口无字段回退英文；中文按译名来源取
+    let cardName = '';
+    if (lang === 'en') {
+      cardName = ygocdb.en_name || '';
+    } else if (lang === 'jp' || lang === 'astral') {
+      cardName = ygocdb.jp_name || '';
+    } else if (lang === 'kr') {
+      cardName = ygocdb.en_name || ygocdb.cn_name || ygocdb.sc_name || '';
+    } else {
+      const nameMap = {
+        cn: ygocdb.cn_name || ygocdb.cnocg_n || ygocdb.nwbbs_n,
+        nwbbs: ygocdb.nwbbs_n,
+        cnocg: ygocdb.cnocg_n,
+        sc: ygocdb.sc_name,
+        md: ygocdb.md_name,
+      };
+      cardName = nameMap[nameSource.value] || ygocdb.cn_name || ygocdb.sc_name || '';
+    }
+    formData.name = cardName;
     // 卡图：从 ygotoken 缓存获取 cid
     cardCid.value = ygocdb.cid || null;
     if (!cardCid.value) {
@@ -1288,13 +1567,11 @@ const searchPassword = async () => {
     const iconKey = Object.keys(spellTrapIcons).find(k => ocgData.type & Number(k));
     formData.icon = mainType === 'spell' || mainType === 'trap' ? (spellTrapIcons[iconKey] || '') : '';
 
-    // 灵摆卡拆分
-    const rawDesc = textData.desc || '';
-    const pendulumMatch = rawDesc.match(/【灵摆效果】\s*\n([\s\S]*?)(?:\n【怪兽(?:效果|信息)】|$)/);
-    const monsterMatch = rawDesc.match(/【怪兽(?:效果|信息)】\s*\n([\s\S]*)/);
-    if (mainType === 'pendulum' && pendulumMatch) {
-      formData.pendulumDescription = pendulumMatch[1].trim();
-      formData.description = (monsterMatch?.[1] || '').trim();
+    // 灵摆卡拆分：百鸽 API 中灵摆效果(pdesc)和怪兽效果(desc)是两个独立字段
+    const rawDesc = (textData.desc || '').trim();
+    if (mainType === 'pendulum') {
+      formData.pendulumDescription = (textData.pdesc || '').trim();
+      formData.description = rawDesc;
     } else {
       formData.pendulumDescription = '';
       formData.description = rawDesc;
@@ -1307,46 +1584,36 @@ const searchPassword = async () => {
 
     // 卡图：ygotoken 的 WebP 高清艺术插画（1200×1200）
     if (cardCid.value) {
-      const imgPath = `/ygotoken-img/webp/${cardCid.value}.webp`;
-      if (import.meta.env.DEV) {
-        // 开发环境：Vite 代理转发到 ygotoken，避免 CORS
-        formData.image = imgPath;
-      } else if (window.location.protocol === 'https:') {
-        // GitHub Pages 等 HTTPS 静态托管：通过 weserv 代理桥接 HTTP 源，解决混合内容拦截
-        formData.image = `https://images.weserv.nl/?url=www.ygotoken.com/images/webp/${cardCid.value}.webp`;
-      } else {
-        // EXE（file://）或 HTTP 环境：直连 ygotoken
-        formData.image = `http://www.ygotoken.com/images/webp/${cardCid.value}.webp`;
-      }
+      formData.image = getYgotokenImageUrl(cardCid.value);
     } else {
       formData.image = '';
-      ElMessage.warning('该卡片暂无卡图，可手动上传');
+      ElMessage.warning(t('noImage'));
     }
 
     updateCard();
-    ElMessage.success(`随机一卡：${formData.name}`);
+    if (!silent) ElMessage.success(`${t('randomOne')}: ${formData.name}`);
   } catch (e) {
-    ElMessage.error('网络错误，搜索失败');
+    if (!silent) ElMessage.error(t('networkError'));
     cardCid.value = null;
   } finally {
-    searchLoading.value = false;
+    if (!silent) searchLoading.value = false;
   }
 };
 
 // 卡名搜索（百鸽 API）
 const searchByName = async () => {
   const kw = nameSearchKeyword.value.trim();
-  if (!kw) { ElMessage.warning('请输入卡名'); return; }
+  if (!kw) { ElMessage.warning(t('pleaseInputName')); return; }
   nameSearchLoading.value = true;
   try {
     const resp = await fetch(`https://ygocdb.com/api/v0/?search=${encodeURIComponent(kw)}`);
     const result = await resp.json();
-    if (!result?.result?.length) { ElMessage.warning('未找到匹配的卡片'); return; }
+    if (!result?.result?.length) { ElMessage.warning(t('nameNotFound')); return; }
     formData.password = String(result.result[0].id);
     nameSearchKeyword.value = '';
     await searchPassword();
   } catch (e) {
-    ElMessage.error('网络错误，搜索失败');
+    ElMessage.error(t('networkError'));
   } finally {
     nameSearchLoading.value = false;
   }
@@ -1378,12 +1645,12 @@ watch(() => jsonData.value, newVal => {
 const autoPhonetic = () => {
   const text = formData.name || '';
   if (!text.trim()) {
-    ElMessage.warning('请先填写卡名');
+    ElMessage.warning(t('pleaseInputCardName'));
     return;
   }
   // 简化：仅在控制台提示用户
   // 完整功能需要汉字 → 假名 映射表（约 6000 字），这里提供占位实现
-  ElMessage.info('一键注音：汉字转日文假名需额外词库，已为你打开外部工具页面');
+  ElMessage.info(t('phoneticInfo'));
   window.open(`https://kanji.reader.bz/h/${encodeURIComponent(text)}`, '_blank', 'noopener');
 };
 </script>
@@ -1468,6 +1735,13 @@ const autoPhonetic = () => {
 .param-header {
   padding: 14px 16px 10px;
   border-bottom: 1px solid #ebeef5;
+
+  .param-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
 
   .param-title {
     font-size: 15px;

@@ -25,6 +25,8 @@ export class Card {
   view = null;
   resourcePath = null;
   skia = null;
+  fontReady = null;
+  fontLoaded = false;
 
   constructor(data = {}) {
     this.view = data.view;
@@ -43,17 +45,32 @@ export class Card {
     if (fontPath) {
       if (isNode) {
         loadFontNode(`${this.resourcePath}${fontPath}`, this.skia); // 同步
+        this.fontLoaded = true;
       } else {
-        loadFontBrowser(`${this.resourcePath}${fontPath}`).then(() => { // 异步，加载完再绘制一次
+        // 异步加载字体，保存 Promise；加载完成后重绘（字体就绪后再绘制保证测量准确）
+        this.fontReady = loadFontBrowser(`${this.resourcePath}${fontPath}`).then(() => {
+          this.fontLoaded = true;
+          this.draw();
+        }).catch(err => {
+          // 字体加载失败时降级：标记为已加载并重绘，使用系统默认字体渲染，避免卡片完全不显示
+          console.error('[Card] 字体加载失败，降级为系统字体:', err);
+          this.fontLoaded = true;
           this.draw();
         });
       }
+    } else {
+      this.fontLoaded = true;
     }
   }
 
   setData(data = {}) {
     // 使用解构赋值创建新对象，避免 reactive proxy 导致的数据污染
     this.data = { ...this.data, ...data };
+    // 字体未加载完成时，等待字体就绪后再重绘（否则语言切换会用未就绪字体渲染失败）
+    if (!this.fontLoaded && this.fontReady) {
+      this.fontReady.then(() => this.draw());
+      return;
+    }
     this.draw();
   }
 

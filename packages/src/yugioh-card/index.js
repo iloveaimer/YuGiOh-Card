@@ -13,6 +13,7 @@ import custom2Style from './style/custom2-style.js';
 import lsStyle from './style/ls-style.js';
 import lsfStyle from './style/lsf-style.js';
 import hklsw7Style from './style/hklsw7-style.js';
+import hklsw5Style from './style/hklsw5-style.js';
 import ktStyle from './style/kt-style.js';
 
 export class YugiohCard extends Card {
@@ -142,6 +143,9 @@ export class YugiohCard extends Card {
       rtFontSize: name.rtFontSize,
       rtTop: name.rtTop,
       rtColor: this.autoNameColor,
+      // 长卡名自动缩小字号（英文卡名普遍较长，避免横向压扁变形）
+      autoSmallSize: true,
+      smallFontSize: Math.round(name.fontSize * 0.72),
       width: this.showAttribute ? 1033 : 1161,
       height: 200,
       x: 116,
@@ -760,6 +764,8 @@ export class YugiohCard extends Card {
         style = custom2Style;
       } else if (this.data.font === 'hklsw7') {
         style = hklsw7Style;
+      } else if (this.data.font === 'hklsw5') {
+        style = hklsw5Style;
       } else if (this.data.font === 'xlsj') {
         style = lsStyle;
       } else if (this.data.font === 'xlsf') {

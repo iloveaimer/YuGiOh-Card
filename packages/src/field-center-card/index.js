@@ -27,10 +27,14 @@ export class FieldCenterCard extends Card {
   }
 
   draw() {
-    this.drawCard();
-    this.drawImage();
-    this.drawMask();
-    this.updateScale();
+    const steps = ['drawCard', 'drawImage', 'drawMask', 'updateScale'];
+    for (const step of steps) {
+      try {
+        this[step]();
+      } catch (e) {
+        console.error(`[FieldCenterCard] ${step}() 渲染失败:`, e);
+      }
+    }
   }
 
   drawCard() {
