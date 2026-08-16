@@ -30,11 +30,14 @@ export class YugiohBackCard extends Card {
   }
 
   draw() {
-    this.drawCard();
-    this.drawKonami();
-    this.drawRegister();
-    this.drawLogo();
-    this.updateScale();
+    const steps = ['drawCard', 'drawKonami', 'drawRegister', 'drawLogo', 'updateScale'];
+    for (const step of steps) {
+      try {
+        this[step]();
+      } catch (e) {
+        console.error(`[YugiohBackCard] ${step}() 渲染失败:`, e);
+      }
+    }
   }
 
   drawCard() {

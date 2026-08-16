@@ -1,0 +1,195 @@
+// UI language: English
+export default {
+  // Toolbar
+  zoomOut: 'Zoom out',
+  zoomIn: 'Zoom in',
+  resetZoom: 'Reset zoom',
+  randomTip: 'Randomly pick a real card from the OCG database',
+  randomOne: 'Random Card',
+  phoneticTip: 'Scan Chinese name/effect to look up Japanese reading',
+  phonetic: 'Furigana',
+  importTip: 'Import card data from JSON file',
+  import: 'Import',
+  exportTip: 'Export current card as JSON file',
+  export: 'Export',
+  resetTip: 'Reset to default card data',
+  reset: 'Reset',
+  exportScaleTitle: 'Export resolution (1x=1394×2031)',
+  exportImage: 'Export Image',
+
+  // Title
+  title: 'Yu-Gi-Oh! Card Maker',
+  desc: 'YGO Card Markers',
+
+  // Card types
+  cardYugioh: 'Yu-Gi-Oh!',
+  cardRushDuel: 'Rush Duel',
+  cardBack: 'Card Back',
+  cardField: 'Field',
+  cardSeries2: 'Series 2',
+
+  // Field labels
+  language: 'Language',
+  font: 'Font',
+  name: 'Name',
+  namePlaceholder: 'Enter card name',
+  nameColor: 'Name Color',
+  gradient: 'Gradient',
+  colorTip: '(Auto if empty)',
+  gradientColor1: 'Gradient 1',
+  gradientColor2: 'Gradient 2',
+  nameAlign: 'Name Align',
+  type: 'Type',
+  attribute: 'Attribute',
+  image: 'Artwork',
+  chooseImage: 'Choose Image',
+  imageUrlPlaceholder: 'Or enter image URL',
+  confirm: 'OK',
+  cardType: 'Card Type',
+  pendulumType: 'Pendulum Type',
+  icon: 'Icon',
+  none: 'None',
+  rank: 'Rank',
+  level: 'Level',
+  pendulumScale: 'Pendulum Scale',
+  race: 'Race',
+  racePlaceholder: 'e.g. Dragon/Normal',
+  atkBar: 'ATK Bar',
+  linkMarker: 'Link Markers',
+  pendulumDesc: 'Pendulum Effect',
+  pendulumDescPlaceholder: 'Enter pendulum effect text',
+  effect: 'Effect',
+  firstLineCompress: 'Compress First Line',
+  textCenter: 'Center Text',
+  effectPlaceholder: 'Enter card effect text',
+  fontSize: 'Font Size',
+  fontWeight: 'Font Weight',
+  package: 'Set Code',
+  packagePlaceholder: 'e.g. SD25-SC001',
+  password: 'Password',
+  passwordPlaceholder: '8 digits',
+  search: 'Search',
+  translatedName: 'Translated Name',
+  nameSearch: 'Name Search',
+  nameSearchPlaceholder: 'Search by name',
+  copyright: 'Copyright',
+  rare: 'Rarity',
+  laser: 'Security Foil',
+  twentieth: 'Anniversary',
+  radius: 'Rounded Corners',
+  legend: 'Legend Card',
+  backType: 'Back Type',
+  logo: 'Logo',
+  backOptions: 'Back Options',
+  konami: 'Konami',
+  register: 'Registered Trademark',
+  fieldOptions: 'Field Options',
+  backMode: 'Back Mode',
+  advanced: 'Advanced',
+
+  // Language options
+  langSC: 'Simplified Chinese',
+  langTC: 'Traditional Chinese',
+  langJP: 'Japanese',
+  langKR: 'Korean',
+  langEN: 'English',
+  langAstral: 'Astral',
+
+  // Font options
+  fontDefault: 'DF KaiShu A Std W5',
+  fontCustom1: 'DF LiShu',
+  fontCustom2: 'Arphic LiShu',
+  fontXlsj: 'Jing Dian Xi LiShu (SC)',
+  fontXlsf: 'Jing Dian Xi LiShu (TC)',
+  fontHklsw7: 'DF LiShu W7 (SC)',
+  fontHklsw5: 'DF LiShu W5 (TC)',
+  fontKt: 'KaiTi',
+
+  // Align
+  alignLeft: 'Left',
+  alignCenter: 'Center',
+  alignRight: 'Right',
+
+  // Attributes
+  attrNone: 'None',
+  attrDark: 'DARK',
+  attrLight: 'LIGHT',
+  attrEarth: 'EARTH',
+  attrWater: 'WATER',
+  attrFire: 'FIRE',
+  attrWind: 'WIND',
+  attrDivine: 'DIVINE',
+
+  // Card types
+  monster: 'Monster',
+  spell: 'Spell',
+  trap: 'Trap',
+  pendulum: 'Pendulum',
+
+  // Card sub-types
+  normal: 'Normal',
+  effect: 'Effect',
+  ritual: 'Ritual',
+  fusion: 'Fusion',
+  synchro: 'Synchro',
+  xyz: 'Xyz',
+  link: 'Link',
+
+  // Pendulum types
+  normalPendulum: 'Normal Pendulum',
+  effectPendulum: 'Effect Pendulum',
+  ritualPendulum: 'Ritual Pendulum',
+  fusionPendulum: 'Fusion Pendulum',
+  synchroPendulum: 'Synchro Pendulum',
+  xyzPendulum: 'Xyz Pendulum',
+  linkPendulum: 'Link Pendulum',
+
+  // Icons
+  equip: 'Equip',
+  field: 'Field',
+  quickPlay: 'Quick-Play',
+  continuous: 'Continuous',
+  counter: 'Counter',
+
+  // Name sources
+  nameSourceCN: 'YGOPro',
+  nameSourceSC: 'Official SC',
+  nameSourceMD: 'Master Duel',
+  nameSourceNWBBS: 'NWBBS',
+  nameSourceCNOCG: 'CNOCG',
+
+  // Copyright
+  copyrightEN: 'English (EN)',
+  copyrightJP: 'Japanese (JP)',
+  copyrightSC: 'Simplified (SC)',
+
+  // Security foil
+  laser1: 'Style 1',
+  laser2: 'Style 2',
+  laser3: 'Style 3',
+  laser4: 'Style 4',
+
+  // Anniversary
+  twentieth20: '20th Anniversary',
+  twentieth25: '25th Anniversary',
+
+  // Messages
+  resetSuccess: 'Reset complete',
+  exportSuccess: 'Data exported',
+  importSuccess: 'Data imported',
+  importError: 'Invalid JSON, import failed',
+  imageError: 'Image failed to load, cleared',
+  randomFail: 'Random generation failed, please retry',
+  pleaseInputPassword: 'Please enter the password first',
+  passwordInvalid: 'Password should be 6-8 digits',
+  passwordNotFound: 'Card password not found',
+  noImage: 'No artwork for this card, upload manually',
+  networkError: 'Network error, search failed',
+  pleaseInputName: 'Please enter a card name',
+  nameNotFound: 'No matching card found',
+  pleaseInputCardName: 'Please enter the card name first',
+  phoneticInfo: 'Furigana requires a hanzi-to-kana dictionary; opened an external tool for you',
+
+  // UI language switcher
+  uiLanguage: 'UI Language',
+};

@@ -63,22 +63,19 @@ export class RushDuelCard extends Card {
   }
 
   draw() {
-    this.drawCard();
-    this.drawName();
-    this.drawAttribute();
-    this.drawLevel();
-    this.drawSpellTrap();
-    this.drawImage();
-    this.drawMask();
-    this.drawPackage();
-    this.drawEffect();
-    this.drawDescription();
-    this.drawMaximumAtk();
-    this.drawAtkDef();
-    this.drawLegend();
-    this.drawLaser();
-    this.drawRare();
-    this.updateScale();
+    const steps = [
+      'drawCard', 'drawName', 'drawAttribute', 'drawLevel',
+      'drawSpellTrap', 'drawImage', 'drawMask', 'drawPackage',
+      'drawEffect', 'drawDescription', 'drawMaximumAtk', 'drawAtkDef',
+      'drawLegend', 'drawLaser', 'drawRare', 'updateScale',
+    ];
+    for (const step of steps) {
+      try {
+        this[step]();
+      } catch (e) {
+        console.error(`[RushDuelCard] ${step}() 渲染失败:`, e);
+      }
+    }
   }
 
   drawCard() {

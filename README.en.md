@@ -34,7 +34,13 @@
 | 📦 **One-Click Export**   | JSON import/export, high-res PNG (up to 5x)                                            |
 | 🖥️ **Desktop App**        | Windows EXE, standalone, no browser needed                                             |
 
-> Card data by [ygocdb.com](https://ygocdb.com/), artwork by [ygotoken.com](http://www.ygotoken.com/)
+> **Data Sources**
+>
+> | Data | Source |
+> | ---- | ------ |
+> | Card info & translations (Chinese / Japanese / Korean) | [ygocdb.com](https://ygocdb.com/) |
+> | English name / description / race | [ygoprodeck.com](https://ygoprodeck.com/) |
+> | Card artwork (1200×1200 WebP, all languages) | [ygotoken.com](http://www.ygotoken.com/) |
 
 Currently there are 5 types of cards: 🚀🚀🚀🚀🚀
 
@@ -142,7 +148,7 @@ http
 |    Property Name    |        Description        |  Type   |                                                                Options                                                                |                                      Notes                                      |      Default      |
 | :-----------------: | :-----------------------: | :-----: | :-----------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: | :---------------: |
 |      language       |         Language          |  enum   |                                              'sc' / 'tc' / 'jp' / 'kr' / 'en' / 'astral'                                              | Simplified Chinese / Traditional Chinese / Japanese / Korean / English / Astral |       'sc'        |
-|        font         |           Font            |  enum   |                                    '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'                                     |             Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2              |        ''         |
+|        font         |           Font            |  enum   |                             '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'hklsw5' / 'kt' / 'custom1' / 'custom2'                             |       DF KaiShu A Std W5 / XLSJ / XLSF / HKLW7 / HKLW5 / KT / Custom1 / Custom2        |        ''         |
 |        name         |         Card Name         | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
 |        color        |      Card Name Color      | string  |                                                                   —                                                                   |                                        —                                        |        ''         |
 |        align        |    Card Name Alignment    |  enum   |                                                      'left' / 'center' / 'right'                                                      |                              Left / Center / Right                              |      'left'       |
@@ -233,7 +239,7 @@ http
 |   Property Name   |        Description        |  Type   |                                         Options                                          |                                   Notes                                    |  Default  |
 | :---------------: | :-----------------------: | :-----: | :--------------------------------------------------------------------------------------: | :------------------------------------------------------------------------: | :-------: |
 |     language      |         Language          |  enum   |                                           'jp'                                           |                                  Japanese                                  |   'jp'    |
-|       font        |           Font            |  enum   |              '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'kt' / 'custom1' / 'custom2'              |           Default / XLSJ / XLSF / HKLW7 / KT / Custom1 / Custom2           |    ''     |
+|       font        |           Font            |  enum   |        '' / 'xlsj' / 'xlsf' / 'hklsw7' / 'hklsw5' / 'kt' / 'custom1' / 'custom2'        |     DF KaiShu A Std W5 / XLSJ / XLSF / HKLW7 / HKLW5 / KT / Custom1 / Custom2     |    ''     |
 |       name        |         Card Name         | string  |                                            —                                             |                                     —                                      |    ''     |
 |       color       |      Card Name Color      | string  |                                            —                                             |                                     —                                      |    ''     |
 |       align       |    Card Name Alignment    |  enum   |                               'left' / 'center' / 'right'                                |                           Left / Center / Right                            |  'left'   |
@@ -260,3 +266,16 @@ http
 |       laser       |        Laser Mark         |  enum   |                      '' / 'laser1' / 'laser2' / 'laser3' / 'laser4'                      |                            Style 1 / 2 / 3 / 4                             |    ''     |
 |      radius       |      Rounded Corners      | boolean |                                            —                                             |                                     —                                      |   true    |
 |       scale       |        Card Scale         | number  |                                            —                                             |                                     —                                      |     1     |
+
+## ⚖️ Font Copyright Notice
+
+The bundled font files (under `src/assets/yugioh-card/`) come from multiple type foundries. **All font copyrights and trademarks belong to their respective owners**, including but not limited to:
+
+- DynaComware / DynaLab
+- Arphic
+- Emigre Graphics
+- Adobe Systems
+- SandollTypeBank / Fontworks / TypeBank
+- Dr. Hann-Tzong Wang (HtWang Fonts)
+
+These fonts are included for technical demonstration and educational purposes only, and **are not licensed for third-party commercial use** by this project. If you intend to use this project or its fonts commercially, please obtain proper licenses from the respective foundries. If you are a font copyright holder and believe this project infringes your rights, please contact us and we will remove the relevant font files immediately.

@@ -1,0 +1,195 @@
+// 界面语言：简体中文
+export default {
+  // 工具栏
+  zoomOut: '缩小',
+  zoomIn: '放大',
+  resetZoom: '重置缩放',
+  randomTip: '从 OCG 卡库随机调取一张真实卡片',
+  randomOne: '随机一卡',
+  phoneticTip: '扫描中文卡名/效果，一键打开日文读音查询',
+  phonetic: '注音',
+  importTip: '从 JSON 文件导入卡数据',
+  import: '导入',
+  exportTip: '导出当前卡片为 JSON 文件',
+  export: '导出',
+  resetTip: '重置为默认卡数据',
+  reset: '重置',
+  exportScaleTitle: '导出图片分辨率（1x=1394×2031）',
+  exportImage: '导出图片',
+
+  // 标题
+  title: '游戏王卡片生成器',
+  desc: 'YGO Card Markers',
+
+  // 卡片类型
+  cardYugioh: '游戏王',
+  cardRushDuel: '超速决斗',
+  cardBack: '卡背',
+  cardField: '场地',
+  cardSeries2: '2期',
+
+  // 表单标签
+  language: '语言',
+  font: '字体',
+  name: '卡名',
+  namePlaceholder: '输入卡片名称',
+  nameColor: '卡名颜色',
+  gradient: '渐变',
+  colorTip: '（自动选择清空）',
+  gradientColor1: '渐变色1',
+  gradientColor2: '渐变色2',
+  nameAlign: '卡名对齐',
+  type: '类型',
+  attribute: '属性',
+  image: '卡图',
+  chooseImage: '选择图片',
+  imageUrlPlaceholder: '或输入图片URL',
+  confirm: '确定',
+  cardType: '卡类',
+  pendulumType: '灵摆类型',
+  icon: '图标',
+  none: '无',
+  rank: '阶级',
+  level: '星级',
+  pendulumScale: '灵摆刻度',
+  race: '种族',
+  racePlaceholder: '例：龙/通常',
+  atkBar: 'ATK栏',
+  linkMarker: '连接标记',
+  pendulumDesc: '灵摆描述',
+  pendulumDescPlaceholder: '输入灵摆效果描述',
+  effect: '效果',
+  firstLineCompress: '首行压缩',
+  textCenter: '文本居中',
+  effectPlaceholder: '输入卡片效果描述',
+  fontSize: '字号',
+  fontWeight: '字重',
+  package: '卡包',
+  packagePlaceholder: '例：SD25-SC001',
+  password: '密码',
+  passwordPlaceholder: '8位数字',
+  search: '搜索',
+  translatedName: '译名',
+  nameSearch: '卡名搜索',
+  nameSearchPlaceholder: '按卡名搜索',
+  copyright: '版权',
+  rare: '罕贵',
+  laser: '防伪标',
+  twentieth: '周年',
+  radius: '圆角',
+  legend: '传说卡',
+  backType: '卡背类型',
+  logo: 'Logo',
+  backOptions: '卡背选项',
+  konami: 'Konami',
+  register: '注册商标',
+  fieldOptions: '场地选项',
+  backMode: '卡背模式',
+  advanced: '高级',
+
+  // 语言选项
+  langSC: '简体中文',
+  langTC: '繁体中文',
+  langJP: '日语',
+  langKR: '韩语',
+  langEN: '英语',
+  langAstral: '星光体',
+
+  // 字体选项
+  fontDefault: '华康楷体A Std W5',
+  fontCustom1: '华康隶书体',
+  fontCustom2: '文鼎中粗隶简繁',
+  fontXlsj: '经典细隶书简',
+  fontXlsf: '经典细隶书繁',
+  fontHklsw7: '华康隶书体W7',
+  fontHklsw5: '华康隶书体W5',
+  fontKt: '楷体',
+
+  // 对齐
+  alignLeft: '左对齐',
+  alignCenter: '居中',
+  alignRight: '右对齐',
+
+  // 属性
+  attrNone: '无',
+  attrDark: '暗',
+  attrLight: '光',
+  attrEarth: '地',
+  attrWater: '水',
+  attrFire: '炎',
+  attrWind: '风',
+  attrDivine: '神',
+
+  // 卡片类型（怪兽/魔法/陷阱/灵摆）
+  monster: '怪兽',
+  spell: '魔法',
+  trap: '陷阱',
+  pendulum: '灵摆',
+
+  // 卡类
+  normal: '通常',
+  effect: '效果',
+  ritual: '仪式',
+  fusion: '融合',
+  synchro: '同调',
+  xyz: '超量',
+  link: '连接',
+
+  // 灵摆类型
+  normalPendulum: '通常灵摆',
+  effectPendulum: '效果灵摆',
+  ritualPendulum: '仪式灵摆',
+  fusionPendulum: '融合灵摆',
+  synchroPendulum: '同调灵摆',
+  xyzPendulum: '超量灵摆',
+  linkPendulum: '连接灵摆',
+
+  // 图标
+  equip: '装备',
+  field: '场地',
+  quickPlay: '速攻',
+  continuous: '永续',
+  counter: '反击',
+
+  // 译名来源
+  nameSourceCN: 'YGOPro 译名',
+  nameSourceSC: '简中官方译名',
+  nameSourceMD: 'Master Duel 译名',
+  nameSourceNWBBS: 'NWBBS 译名',
+  nameSourceCNOCG: 'CNOCG 译名',
+
+  // 版权
+  copyrightEN: '英文 (EN)',
+  copyrightJP: '日文 (JP)',
+  copyrightSC: '简体 (SC)',
+
+  // 防伪标
+  laser1: '样式一',
+  laser2: '样式二',
+  laser3: '样式三',
+  laser4: '样式四',
+
+  // 周年
+  twentieth20: '20周年',
+  twentieth25: '25周年',
+
+  // 消息提示
+  resetSuccess: '已重置',
+  exportSuccess: '数据已导出',
+  importSuccess: '数据已导入',
+  importError: 'JSON 格式错误，导入失败',
+  imageError: '图片加载失败，已清除',
+  randomFail: '随机生成失败，请重试',
+  pleaseInputPassword: '请先输入卡密',
+  passwordInvalid: '卡密应为 6-8 位数字',
+  passwordNotFound: '未找到该卡密',
+  noImage: '该卡片暂无卡图，可手动上传',
+  networkError: '网络错误，搜索失败',
+  pleaseInputName: '请输入卡名',
+  nameNotFound: '未找到匹配的卡片',
+  pleaseInputCardName: '请先填写卡名',
+  phoneticInfo: '一键注音：汉字转日文假名需额外词库，已为你打开外部工具页面',
+
+  // 界面语言切换
+  uiLanguage: '界面语言',
+};

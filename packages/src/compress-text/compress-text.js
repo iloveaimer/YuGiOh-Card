@@ -18,11 +18,12 @@
 import { Group, Text } from 'leafer-unified';
 import { isBrowser } from '../utils/index.js';
 import { splitBreakWordWithBracket } from './split-break-word.js';
+import { normalizeCardText } from './text-normalize.js';
 
 const rubyTokenPattern = /(\[[^\[\]()]*\([^\[\]()]*\)])/g;
 const rubyRtPattern = /^\[([^\[\]()]+)\(([^\[\]()]*)\)]$/;
 const baseLineHeight = 1.15; // 默认正文与注音行高倍率。
-const noCompressText = '●①②③④⑤⑥⑦⑧⑨⑩'; // 不参与末行压缩的特殊字符集合。
+const noCompressText = '●①②③④⑤⑥⑦⑧⑨⑩©★☆'; // 不参与压缩的特殊字符集合（首行压缩、末行压缩均生效）。
 const compressBinarySearchStartScale = 0.15; // 高度压缩时二分搜索的初始缩放值。
 const compressBinarySearchPrecision = 0.01; // 高度压缩时二分搜索的停止精度。
 const autoSmallSizeScaleThreshold = 0.7; // autoSmallSize 触发切换到小字模式的缩放阈值。
@@ -34,6 +35,12 @@ const gradientStrokeColor = 'rgba(0, 0, 0, 0.6)'; // 渐变模式下正文描边
 const gradientStrokeWidthRate = 0.025; // 渐变模式下描边宽度相对字号的倍率。
 const gradientShadowBlurRate = 0.015; // 渐变模式下阴影模糊相对字号的倍率。
 const gradientShadowOffsetYRate = 0.025; // 渐变模式下阴影纵向偏移相对字号的倍率。
+// 日文假名宽度精修（kanaCompact 开启时生效，倍率参考官方卡片排版）
+const smallKanaChars = 'ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ';
+const hiraganaRange = /^[\u3041-\u3096]$/;
+const katakanaRange = /^[\u30A1-\u30FA]$/;
+// 行末标点悬挂补偿（lineEndPunctuationCompensate 开启时生效）
+const lineEndPunctuationChars = '。．.，,、！!？?」』』）)]】';
 
 export class CompressText extends Group {
   /**
@@ -86,6 +93,10 @@ export class CompressText extends Group {
       fontScale: 1,
       autoSmallSize: false,
       smallFontSize: 18,
+      compressMode: 'scale', // 横向压缩模式：'scale' 压扁字形（默认）| 'spacing' 压缩字距保持字形不变
+      kanaCompact: false, // 日文假名宽度精修（默认关闭）
+      lineEndPunctuationCompensate: false, // 行末标点悬挂补偿（默认关闭）
+      normalize: false, // 文本规范化（全角转半角、弯引号、序号圈码等，默认关闭）
       width: 0,
       height: 0,
       x: 0,
@@ -156,7 +167,11 @@ export class CompressText extends Group {
   getParseList() {
     const list = [];
     let bold = false;
-    const text = String(this.text).trimEnd();
+    let rawText = String(this.text);
+    if (this.normalize) {
+      rawText = normalizeCardText(rawText);
+    }
+    const text = rawText.trimEnd();
     // 正则的捕获圆括号不要随意修改
     text.split(new RegExp(`(<b>|</b>|\n|[${noCompressText}])`)).filter(value => value).forEach(value => {
       if (value === '<b>') {
@@ -431,7 +446,44 @@ export class CompressText extends Group {
     ruby.width = ruby.originalWidth;
     ruby.height = ruby.originalHeight;
 
+    this.applyKanaWidthAdjust(ruby);
+
     return rubyLeaf;
+  }
+
+  /**
+   * 对单字符日文假名应用宽度精修。
+   *
+   * 仅在 kanaCompact 开启时生效。参考官方卡片排版，假名在字体实际宽度偏窄时，
+   * 为其补足一个最小占位宽度，避免假名之间间距过密。
+   *
+   * @param {object} ruby ruby 布局对象。
+   */
+  applyKanaWidthAdjust(ruby) {
+    if (!this.kanaCompact) {
+      return;
+    }
+    const text = ruby.text;
+    if (Array.from(text).length !== 1) {
+      return;
+    }
+
+    const fullWidth = this.fontSize * this.fontScale;
+    let minWidth = 0;
+    if (smallKanaChars.includes(text)) {
+      minWidth = fullWidth * 0.7;
+    } else if (hiraganaRange.test(text)) {
+      minWidth = fullWidth * 0.75;
+    } else if (katakanaRange.test(text)) {
+      minWidth = fullWidth * 0.69;
+    } else if (text === 'ー') {
+      minWidth = fullWidth * 0.75;
+    }
+
+    if (minWidth && ruby.originalWidth < minWidth) {
+      ruby.originalWidth = minWidth;
+      ruby.width = minWidth;
+    }
   }
 
   /**
@@ -872,6 +924,27 @@ export class CompressText extends Group {
         this.alignRubyLine(lineList, remainWidth);
       }
     }
+    this.applyLineEndPunctuationCompensate();
+  }
+
+  /**
+   * 对行末标点应用悬挂补偿。
+   *
+   * 仅在 lineEndPunctuationCompensate 开启时生效。全宽标点（句号、逗号、顿号等）
+   * 在两端对齐后其字形实心部分会偏左，导致行末视觉上右侧留白偏大。
+   * 这里将行末标点向右偏移半个盒宽，使其实心部分更贴合对齐边缘。
+   */
+  applyLineEndPunctuationCompensate() {
+    if (!this.lineEndPunctuationCompensate) {
+      return;
+    }
+    this.rubyLineMap.forEach(lineList => {
+      const lastRuby = lineList[lineList.length - 1];
+      if (!lastRuby || !lineEndPunctuationChars.includes(lastRuby.text)) {
+        return;
+      }
+      lastRuby.rubyLeaf.x += lastRuby.width * 0.5;
+    });
   }
 
   /**
@@ -902,8 +975,27 @@ export class CompressText extends Group {
    */
   updateRubyScale(ruby, scale) {
     const rubyLeaf = ruby.rubyLeaf;
+    const targetWidth = ruby.originalWidth * scale;
+
+    // spacing 模式：多字符片段用负字距压缩，保持字形不变形（对标官方卡片「压缩字距而非压扁」）。
+    // 单字符无法压缩字距，或不可压缩字符，回退到 scaleX 压扁。
+    if (this.compressMode === 'spacing' && ruby.text !== '\n' && !noCompressText.includes(ruby.text)) {
+      const charCount = Array.from(ruby.text).length;
+      if (charCount > 1) {
+        rubyLeaf.scaleX = 1;
+        // 需要压缩的总宽度（负值表示收紧）平均分配到字符间隙。
+        const letterSpacing = (targetWidth - ruby.originalWidth) / (charCount - 1);
+        rubyLeaf.letterSpacing = this.letterSpacing + letterSpacing;
+        const bounds = rubyLeaf.getBounds('content', 'inner');
+        ruby.width = bounds.width + (ruby.text === ' ' ? this.wordSpacing : 0);
+        return;
+      }
+    }
+
+    // 默认 scale 模式，或 spacing 模式下的单字符 / 不可压缩字符。
     rubyLeaf.scaleX = scale;
-    ruby.width = ruby.originalWidth * scale;
+    rubyLeaf.letterSpacing = this.letterSpacing;
+    ruby.width = targetWidth;
   }
 
   /**
@@ -940,8 +1032,8 @@ export class CompressText extends Group {
     itemList.forEach(item => {
       const ruby = item.ruby;
       if (this.firstLineCompress && newlineIndex === 0) {
-        // 首行压缩到一行
-        this.updateRubyScale(ruby, this.firstLineTextScale);
+        // 首行压缩到一行；不可压缩字符保持原始比例
+        this.updateRubyScale(ruby, noCompressText.includes(ruby.text) ? 1 : this.firstLineTextScale);
       } else if (!noCompressText.includes(ruby.text)) {
         // 所有非首行都按相同比例压缩，保持字号一致
         this.updateRubyScale(ruby, this.textScale);

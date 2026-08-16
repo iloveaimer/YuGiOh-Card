@@ -1,7 +1,7 @@
 {
   "name": "yugioh-card",
   "private": true,
-  "version": "2.3.6",
+  "version": "2.4.0",
   "description": "Yu-Gi-Oh Card - 游戏王卡片可视化制卡器，基于 Canvas 渲染，支持 OCG 卡库检索与桌面 EXE 打包",
   "type": "module",
   "main": "dist-electron/main.js",
@@ -14,7 +14,7 @@
     "build": "vite build",
     "build:electron": "vite build --mode electron",
     "build:lib": "vite build --mode lib",
-    "build:exe": "node scripts/bump-version.js && pnpm build:electron && set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/&& electron-builder",
+    "build:exe": "pnpm build:electron && set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/&& electron-builder",
     "preview": "vite preview",
     "test": "node --test",
     "publish": "pnpm publish dist --registry https://registry.npmjs.org",
@@ -76,7 +76,7 @@
     "node": ">= 22"
   },
   "pnpm": {
-    "allowBuilds": [
+    "onlyBuiltDependencies": [
       "skia-canvas"
     ]
   },
