@@ -1,8 +1,9 @@
 import { reactive, computed } from 'vue';
 import zhCN from './zh-CN';
 import enUS from './en-US';
+import jaJP from './ja-JP';
 
-const messages = { 'zh-CN': zhCN, 'en-US': enUS };
+const messages = { 'zh-CN': zhCN, 'en-US': enUS, 'ja-JP': jaJP };
 
 // 持久化界面语言选择（localStorage 在特殊环境可能不可用，做保护）
 let saved = 'zh-CN';

@@ -1,7 +1,7 @@
 <h1 align="center">🎉 Yu-Gi-Oh! Card - YuGiOh-Card 🎉</h1>
 
 <div align="center">
-  <p><a href="./README.md">简体中文</a> | English</p>
+  <p><a href="./README.md">简体中文</a> | English | <a href="./README.ja.md">日本語</a></p>
 </div>
 
 <p align="center">
@@ -30,7 +30,8 @@
 | 🎲 **Random Card**        | Pick a random card from the full OCG database                                          |
 | 🌐 **Multi-Locale Names** | YGOPro / Simplified Chinese / Master Duel / NWBBS / CNOCG                              |
 | 🖼️ **HD Artwork**         | 1200×1200 WebP art                                                                     |
-| 🎨 **Full Customization** | Color/gradient/fonts, type/attribute/level/ATK-DEF, link arrows, laser marks, rarities |
+| 🎨 **Full Customization** | Card name color/gradient, type/attribute/level/ATK-DEF, link arrows, laser marks, rarities |
+| 🖋️ **Multi-Font**          | 20+ built-in fonts (SC/TC/JP/EN) + custom font import (woff2/ttf/otf)                  |
 | 📦 **One-Click Export**   | JSON import/export, high-res PNG (up to 5x)                                            |
 | 🖥️ **Desktop App**        | Windows EXE, standalone, no browser needed                                             |
 

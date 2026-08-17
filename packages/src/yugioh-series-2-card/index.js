@@ -9,6 +9,11 @@ import lsfStyle from '../yugioh-card/style/lsf-style.js';
 import hklsw7Style from '../yugioh-card/style/hklsw7-style.js';
 import hklsw5Style from '../yugioh-card/style/hklsw5-style.js';
 import ktStyle from '../yugioh-card/style/kt-style.js';
+import fzlbStyle from '../yugioh-card/style/fzlb-style.js';
+import hktfw5Style from '../yugioh-card/style/hktfw5-style.js';
+import dfgls4Style from '../yugioh-card/style/dfgls4-style.js';
+import dfgls5Style from '../yugioh-card/style/dfgls5-style.js';
+import rodinStyle from '../yugioh-card/style/rodin-style.js';
 
 export class YugiohSeries2Card extends Card {
   cardLeaf = null;
@@ -486,6 +491,16 @@ export class YugiohSeries2Card extends Card {
         style = lsfStyle;
       } else if (this.data.font === 'kt') {
         style = ktStyle;
+      } else if (this.data.font === 'fzlb') {
+        style = fzlbStyle;
+      } else if (this.data.font === 'hktfw5') {
+        style = hktfw5Style;
+      } else if (this.data.font === 'dfgls4') {
+        style = dfgls4Style;
+      } else if (this.data.font === 'dfgls5') {
+        style = dfgls5Style;
+      } else if (this.data.font === 'rodin') {
+        style = rodinStyle;
       }
     } else {
       if (this.data.language === 'jp') {

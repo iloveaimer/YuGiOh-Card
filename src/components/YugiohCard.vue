@@ -121,13 +121,14 @@
                     />
                   </svg>
                 </el-icon>
-                {{ uiLocale === 'zh-CN' ? '简体中文' : 'EN' }}
+                {{ uiLocale === 'zh-CN' ? '简体中文' : uiLocale === 'ja-JP' ? '日本語' : 'EN' }}
                 <el-icon><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="zh-CN" :disabled="uiLocale === 'zh-CN'">简体中文</el-dropdown-item>
                   <el-dropdown-item command="en-US" :disabled="uiLocale === 'en-US'">English</el-dropdown-item>
+                  <el-dropdown-item command="ja-JP" :disabled="uiLocale === 'ja-JP'">日本語</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -174,20 +175,57 @@
               <label class="field-label">{{ t('font') }}</label>
               <el-select
                 v-model="formData.font"
-                :placeholder="t('fontDefault')"
+                :placeholder="t(fontDefaultLabelKey)"
                 size="default"
                 style="width: 100%"
                 @change="setFont"
               >
-                <el-option :label="t('fontDefault')" value="" />
-                <el-option :label="t('fontCustom1')" value="custom1" />
-                <el-option :label="t('fontCustom2')" value="custom2" />
-                <el-option :label="t('fontXlsj')" value="xlsj" />
-                <el-option :label="t('fontXlsf')" value="xlsf" />
-                <el-option :label="t('fontHklsw7')" value="hklsw7" />
-                <el-option :label="t('fontHklsw5')" value="hklsw5" />
-                <el-option :label="t('fontKt')" value="kt" />
+                <el-option :label="t(fontDefaultLabelKey)" value="" />
+                <template v-if="isSC">
+                  <el-option :label="t('fontCustom1')" value="custom1" />
+                  <el-option :label="t('fontCustom2')" value="custom2" />
+                  <el-option :label="t('fontXlsj')" value="xlsj" />
+                  <el-option :label="t('fontFzlb')" value="fzlb" />
+                  <el-option :label="t('fontHklsw7')" value="hklsw7" />
+                  <el-option :label="t('fontKt')" value="kt" />
+                </template>
+                <template v-if="isTC">
+                  <el-option :label="t('fontCustom2')" value="custom2" />
+                  <el-option :label="t('fontXlsf')" value="xlsf" />
+                  <el-option :label="t('fontHklsw5')" value="hklsw5" />
+                  <el-option :label="t('fontHktfw5')" value="hktfw5" />
+                </template>
+                <template v-if="isJP">
+                  <el-option :label="t('fontDfgls4')" value="dfgls4" />
+                  <el-option :label="t('fontDfgls5')" value="dfgls5" />
+                  <el-option :label="t('fontRodin')" value="rodin" />
+                </template>
+                <el-option v-if="isYugioh" :label="t('customFont')" value="custom" />
               </el-select>
+            </div>
+
+            <!-- 自定义字体（选中「自定义字体」后展开） -->
+            <div v-if="isYugioh && formData.font === 'custom'" class="field field-block">
+              <div class="custom-font-list">
+                <div v-for="slot in CUSTOM_FONT_SLOTS" :key="slot" class="custom-font-row">
+                  <span class="custom-font-label">{{ t(fontSlotLabelKeys[slot]) }}</span>
+                  <span class="custom-font-name" :class="{ empty: !customFonts[slot] }" :title="customFonts[slot]?.fileName">
+                    {{ customFonts[slot]?.fileName || t('fontSlotEmpty') }}
+                  </span>
+                  <div class="custom-font-btns">
+                    <el-button size="small" @click="importFontSlot(slot)">{{ t('fontImport') }}</el-button>
+                    <el-button
+                      size="small"
+                      text
+                      type="danger"
+                      :icon="Close"
+                      :class="{ 'custom-font-remove': true, 'invisible': !customFonts[slot] }"
+                      @click="removeFontSlot(slot)"
+                    />
+                  </div>
+                </div>
+                <div class="custom-font-hint">{{ t('fontFormatHint') }}</div>
+              </div>
             </div>
 
             <!-- 卡名 -->
@@ -808,6 +846,13 @@ import rushDuelDemo from '@/assets/demo/rush-duel-demo';
 import yugiohBackDemo from '@/assets/demo/yugioh-back-demo';
 import yugiohDemo from '@/assets/demo/yugioh-demo';
 import yugiohSeries2Demo from '@/assets/demo/yugioh-series-2-demo';
+import {
+  CUSTOM_FONT_SLOTS,
+  CUSTOM_FONT_ACCEPT,
+  importCustomFont,
+  restoreCustomFont,
+  removeCustomFont,
+} from '@/utils/customFont';
 
 const card = ref(null);
 const cardLeaf = shallowRef(null);
@@ -854,6 +899,31 @@ const jsonOption = reactive({
   statusBar: false,
 });
 
+// 用户自定义字体（三槽位：卡名/正文/数值），独立于 formData（不进 JSON 编辑器/导出）
+const customFonts = reactive({
+  name: null,   // { family, fileName } | null
+  body: null,
+  number: null,
+});
+
+// 组装传给渲染层的数据：formData + 当前自定义字体槽位映射
+const buildCardData = () => {
+  const cf = {};
+  CUSTOM_FONT_SLOTS.forEach(slot => {
+    if (customFonts[slot]) {
+      cf[slot] = customFonts[slot].family;
+    }
+  });
+  return { ...toRaw(formData), customFonts: cf };
+};
+
+// 自定义字体槽位的 i18n 文案 key
+const fontSlotLabelKeys = {
+  name: 'fontSlotName',
+  body: 'fontSlotBody',
+  number: 'fontSlotNumber',
+};
+
 const isYugioh = computed(() => form.card === 'yugioh');
 const isRushDuel = computed(() => form.card === 'rush-duel');
 const isYugiohBack = computed(() => form.card === 'yugioh-back');
@@ -876,7 +946,25 @@ const cardTypeChoices = computed(() => {
   ];
 });
 
+// 字体下拉在游戏王/2期卡类下显示
 const showFontSelect = computed(() => isYugioh.value || isYugiohSeries2.value);
+// 是否中文语言：内置中文字体选项仅在简/繁中文下显示
+const isSC = computed(() => formData.language === 'sc');
+const isTC = computed(() => formData.language === 'tc');
+// 是否日文：日文内置字体选项仅在日文下显示
+const isJP = computed(() => formData.language === 'jp');
+// 「系统默认」选项的 label 随卡片语言动态变化，准确展示当前语言的默认字体
+const fontDefaultLabelKey = computed(() => {
+  const map = {
+    sc: 'fontDefaultSc',
+    tc: 'fontDefaultTc',
+    en: 'fontDefaultEn',
+    jp: 'fontDefaultJp',
+    kr: 'fontDefaultKr',
+    astral: 'fontDefaultAstral',
+  };
+  return map[formData.language] || 'fontDefault';
+});
 const showNameAlign = computed(() => isYugioh.value || isYugiohSeries2.value);
 const showNameGradient = computed(() => isYugioh.value || isYugiohSeries2.value);
 const showCardAttr = computed(() => !isYugiohBack.value && !isFieldCenter.value);
@@ -903,6 +991,7 @@ const showLegend = computed(() => isRushDuel.value);
 const showRadius = computed(() => !isFieldCenter.value);
 const showImage = computed(() => !isYugiohBack.value && !isFieldCenter.value);
 const showLinkArrows = computed(() => isYugioh.value && formData.type === 'monster' && formData.cardType === 'link');
+const showTwentieth = computed(() => isYugioh.value);
 
 const imageUrl = ref('');
 const searchLoading = ref(false);
@@ -931,12 +1020,12 @@ const scheduleUpdate = (immediate = false) => {
   jsonData.value = JSON.stringify(formData, null, 2);
   if (immediate) {
     if (updateTimer) clearTimeout(updateTimer);
-    cardLeaf.value?.setData({ ...formData });
+    cardLeaf.value?.setData(buildCardData());
     return;
   }
   if (updateTimer) clearTimeout(updateTimer);
   updateTimer = setTimeout(() => {
-    cardLeaf.value?.setData({ ...formData });
+    cardLeaf.value?.setData(buildCardData());
   }, 120);
 };
 
@@ -1002,11 +1091,35 @@ watch(() => formData.language, lang => {
     formData.monsterType = d.monsterType;
     formData.description = d.description;
   }
+  // 切语言时，若当前字体不属于新语言的内置字体，重置为空
+  // 「自定义字体」（custom）跨语言保留
+  const builtinFont = formData.font;
+  if (builtinFont && builtinFont !== 'custom') {
+    const scFonts = ['custom1', 'custom2', 'xlsj', 'fzlb', 'hklsw7', 'kt'];
+    const tcFonts = ['custom2', 'xlsf', 'hklsw5', 'hktfw5'];
+    const jpFonts = ['dfgls4', 'dfgls5', 'rodin'];
+    const valid =
+      (lang === 'sc' && scFonts.includes(builtinFont)) ||
+      (lang === 'tc' && tcFonts.includes(builtinFont)) ||
+      (lang === 'jp' && jpFonts.includes(builtinFont));
+    if (!valid) formData.font = '';
+  }
   updateCard();
 });
 
-onMounted(() => {
+onMounted(async () => {
   changeCard(form.card);
+  // 恢复用户自定义字体（跨会话持久化），三槽位并行加载
+  await Promise.all(CUSTOM_FONT_SLOTS.map(async slot => {
+    const res = await restoreCustomFont(slot);
+    if (res) {
+      customFonts[slot] = { family: res.family, fileName: res.fileName };
+    }
+  }));
+  // 若当前为经典卡，用恢复的自定义字体重绘
+  if (isYugioh.value && cardLeaf.value) {
+    updateCard();
+  }
 });
 
 onBeforeUnmount(() => {
@@ -1053,7 +1166,7 @@ const changeCard = cardType => {
 
   cardLeaf.value = new Card({
     view: card.value,
-    data: demo,
+    data: buildCardData(),
     resourcePath: window.__YG__?.resourcePath
       ?? (import.meta.env.PROD
         ? './assets/src/assets/yugioh-card'
@@ -1067,6 +1180,34 @@ const changeCard = cardType => {
 
 // 选择字体：只改字体并重绘（语言与字体完全解耦，互不影响）
 const setFont = () => {
+  updateCard();
+};
+
+// 导入自定义字体到指定槽位（卡名 name / 正文 body / 数值 number）
+const importFontSlot = slot => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = CUSTOM_FONT_ACCEPT;
+  input.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const { family, fileName } = await importCustomFont(slot, file);
+      customFonts[slot] = { family, fileName };
+      ElMessage.success(t('fontImportSuccess'));
+      updateCard();
+    } catch (err) {
+      console.error(`[customFont] 导入槽位 ${slot} 失败:`, err);
+      ElMessage.error(t('fontImportError'));
+    }
+  };
+  input.click();
+};
+
+// 移除指定槽位的自定义字体
+const removeFontSlot = async slot => {
+  await removeCustomFont(slot);
+  customFonts[slot] = null;
   updateCard();
 };
 
@@ -1098,7 +1239,7 @@ const updateCard = () => {
   if (cardLeaf.value) {
     // toRaw 确保将 reactive proxy 转为纯对象传入，避免 Leafer 内部 Proxy 干扰
     // setData 内部会调用 draw()，而 draw() 最后一步已含 updateScale()，无需重复调用
-    cardLeaf.value.setData({ ...toRaw(formData) });
+    cardLeaf.value.setData(buildCardData());
   }
   jsonData.value = JSON.stringify(formData, null, 2);
 };
@@ -1108,7 +1249,7 @@ const resetCard = () => {
   demo.scale = 0.5;
   Object.keys(formData).forEach(key => delete formData[key]);
   Object.assign(formData, demo);
-  cardLeaf.value?.setData(demo);
+  cardLeaf.value?.setData(buildCardData());
   jsonData.value = JSON.stringify(demo, null, 2);
   ElMessage.success(t('resetSuccess'));
 };
@@ -1155,7 +1296,7 @@ const importData = () => {
         Object.keys(formData).forEach(key => delete formData[key]);
         Object.assign(formData, merged);
         if (cardLeaf.value) {
-          cardLeaf.value.setData(merged);
+          cardLeaf.value.setData(buildCardData());
         }
         jsonData.value = JSON.stringify(merged, null, 2);
         ElMessage.success(t('importSuccess'));
@@ -1181,7 +1322,7 @@ const syncCardViewSize = () => {
 // 仅更新画布，不刷新 JSON 编辑器（用于缩放等仅改视图的操作）
 const updateCanvasOnly = () => {
   if (cardLeaf.value) {
-    cardLeaf.value.setData({ ...toRaw(formData) });
+    cardLeaf.value.setData(buildCardData());
   }
   syncCardViewSize();
 };
@@ -1630,7 +1771,7 @@ watch(() => jsonData.value, newVal => {
     Object.keys(formData).forEach(key => delete formData[key]);
     Object.assign(formData, parsed);
     if (cardLeaf.value) {
-      cardLeaf.value.setData(parsed);
+      cardLeaf.value.setData(buildCardData());
     }
     syncingFromJson = false;
   } catch {
@@ -1957,6 +2098,61 @@ const autoPhonetic = () => {
     flex: 1;
     margin-bottom: 0;
   }
+}
+
+// 自定义字体导入
+.custom-font-list {
+  padding-top: 2px;
+  padding-left: 12px;
+}
+
+.custom-font-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+
+  .custom-font-label {
+    flex-shrink: 0;
+    width: 56px;
+    color: #909399;
+    text-align: right;
+  }
+
+  .custom-font-name {
+    width: 0;
+    flex: 1;
+    min-width: 0;
+    padding: 0 8px;
+    line-height: 24px;
+    border-radius: 4px;
+    background: #f5f7fa;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #606266;
+
+    &.empty {
+      color: #c0c4cc;
+    }
+  }
+
+  .custom-font-btns {
+    flex-shrink: 0;
+    display: flex;
+    gap: 0;
+
+    .invisible {
+      visibility: hidden;
+    }
+  }
+}
+
+.custom-font-hint {
+  font-size: 11px;
+  color: #c0c4cc;
+  padding-left: 64px;
 }
 
 // 对齐图标

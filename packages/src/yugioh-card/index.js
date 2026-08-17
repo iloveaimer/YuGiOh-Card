@@ -15,6 +15,30 @@ import lsfStyle from './style/lsf-style.js';
 import hklsw7Style from './style/hklsw7-style.js';
 import hklsw5Style from './style/hklsw5-style.js';
 import ktStyle from './style/kt-style.js';
+import fzlbStyle from './style/fzlb-style.js';
+import hktfw5Style from './style/hktfw5-style.js';
+import dfgls4Style from './style/dfgls4-style.js';
+import dfgls5Style from './style/dfgls5-style.js';
+import rodinStyle from './style/rodin-style.js';
+
+// 将用户自定义字体覆盖到基础 style（深拷贝，避免污染模块级单例）
+function applyCustomFonts(style, cf) {
+  const s = JSON.parse(JSON.stringify(style));
+  if (cf.name) {
+    s.name = s.name || {};
+    s.name.fontFamily = cf.name;
+  }
+  if (cf.body) {
+    s.fontFamily = cf.body;
+    // 正文相关的子字体（英/韩的类型栏、灵摆描述等使用独立 race 字体，一并覆盖）
+    ['spellTrap', 'effect', 'description', 'pendulumDescription'].forEach(key => {
+      if (s[key]) {
+        s[key].fontFamily = cf.body;
+      }
+    });
+  }
+  return s;
+}
 
 export class YugiohCard extends Card {
   cardLeaf = null;
@@ -44,6 +68,8 @@ export class YugiohCard extends Card {
   data = {
     language: 'sc',
     font: '',
+    // 用户自定义字体（三槽位 family 名，由 UI 层注册 FontFace 后传入）
+    customFonts: {},
     name: '',
     color: '',
     align: 'left',
@@ -347,7 +373,7 @@ export class YugiohCard extends Card {
     let left = this.data.language === 'astral' ? 144 : 145;
     leftPendulum.set({
       text: this.data.pendulumScale,
-      fontFamily: this.data.language === 'astral' ? 'ygo-astral' : 'ygo-atk-def',
+      fontFamily: this.atkDefFontFamily,
       fontSize: this.data.language === 'astral' ? 84 : 98,
       fill: 'black',
       letterSpacing: this.data.language === 'astral' ? 0 : -10,
@@ -359,7 +385,7 @@ export class YugiohCard extends Card {
     left = this.data.language === 'astral' ? 1250 : 1249;
     rightPendulum.set({
       text: this.data.pendulumScale,
-      fontFamily: this.data.language === 'astral' ? 'ygo-astral' : 'ygo-atk-def',
+      fontFamily: this.atkDefFontFamily,
       fontSize: this.data.language === 'astral' ? 84 : 98,
       fill: 'black',
       letterSpacing: this.data.language === 'astral' ? 0 : -10,
@@ -411,7 +437,7 @@ export class YugiohCard extends Card {
 
     this.packageLeaf.set({
       text: this.data.package,
-      fontFamily: 'ygo-password',
+      fontFamily: this.passwordFontFamily,
       fontSize: 40,
       color: this.data.type === 'monster' && this.data.cardType === 'xyz' ? 'white' : 'black',
       textAlign: this.data.type === 'pendulum' ? 'left' : 'right',
@@ -595,7 +621,7 @@ export class YugiohCard extends Card {
     const atkLeft = this.data.language === 'astral' ? 898 : 999;
     atk.set({
       text: atkText,
-      fontFamily: this.data.language === 'astral' ? 'ygo-astral' : 'ygo-atk-def',
+      fontFamily: this.atkDefFontFamily,
       fontSize: this.data.language === 'astral' ? 49 : 62,
       fill: 'black',
       letterSpacing: this.data.language === 'astral' ? 0 : 2,
@@ -616,7 +642,7 @@ export class YugiohCard extends Card {
     const defLeft = this.data.language === 'astral' ? 1279 : 1282;
     def.set({
       text: defText,
-      fontFamily: this.data.language === 'astral' ? 'ygo-astral' : 'ygo-atk-def',
+      fontFamily: this.atkDefFontFamily,
       fontSize: this.data.language === 'astral' ? 49 : 62,
       fill: 'black',
       letterSpacing: this.data.language === 'astral' ? 0 : 2,
@@ -631,7 +657,7 @@ export class YugiohCard extends Card {
     const linkLeft = this.data.language === 'astral' ? 1279 : 1280;
     link.set({
       text: linkText,
-      fontFamily: this.data.language === 'astral' ? 'ygo-astral' : 'ygo-link',
+      fontFamily: this.linkFontFamily,
       fontSize: this.data.language === 'astral' ? 49 : 44,
       fill: 'black',
       letterSpacing: this.data.language === 'astral' ? 0 : 2,
@@ -656,7 +682,7 @@ export class YugiohCard extends Card {
 
     this.passwordLeaf.set({
       text: this.data.password,
-      fontFamily: 'ygo-password',
+      fontFamily: this.passwordFontFamily,
       fontSize: 40,
       color: this.data.type === 'monster' && this.data.cardType === 'xyz' ? 'white' : 'black',
       x: 66,
@@ -757,38 +783,78 @@ export class YugiohCard extends Card {
 
   get style() {
     let style = {};
-    if (this.data.font) {
-      if (this.data.font === 'custom1') {
+    const font = this.data.font;
+    const lang = this.data.language;
+    // 'custom' 表示使用用户导入的字体，基础样式走语言默认，再叠加自定义字体覆盖；
+    // 其余内置字体（custom1/custom2/.../kt）直接映射对应样式。
+    if (font && font !== 'custom') {
+      if (font === 'custom1') {
         style = custom1Style;
-      } else if (this.data.font === 'custom2') {
+      } else if (font === 'custom2') {
         style = custom2Style;
-      } else if (this.data.font === 'hklsw7') {
+      } else if (font === 'hklsw7') {
         style = hklsw7Style;
-      } else if (this.data.font === 'hklsw5') {
+      } else if (font === 'hklsw5') {
         style = hklsw5Style;
-      } else if (this.data.font === 'xlsj') {
+      } else if (font === 'xlsj') {
         style = lsStyle;
-      } else if (this.data.font === 'xlsf') {
+      } else if (font === 'xlsf') {
         style = lsfStyle;
-      } else if (this.data.font === 'kt') {
+      } else if (font === 'kt') {
         style = ktStyle;
-      }
-    } else {
-      if (this.data.language === 'sc') {
-        style = scStyle;
-      } else if (this.data.language === 'tc') {
-        style = tcStyle;
-      } else if (this.data.language === 'jp') {
-        style = jpStyle;
-      } else if (this.data.language === 'kr') {
-        style = krStyle;
-      } else if (this.data.language === 'en') {
-        style = enStyle;
-      } else if (this.data.language === 'astral') {
-        style = astralStyle;
+      } else if (font === 'fzlb') {
+        style = fzlbStyle;
+      } else if (font === 'hktfw5') {
+        style = hktfw5Style;
+      } else if (font === 'dfgls4') {
+        style = dfgls4Style;
+      } else if (font === 'dfgls5') {
+        style = dfgls5Style;
+      } else if (font === 'rodin') {
+        style = rodinStyle;
       }
     }
+    // 没有匹配到内置字体时（font 为空/'custom'/未知值），按语言取默认样式
+    if (!style.name) {
+      if (lang === 'sc') {
+        style = scStyle;
+      } else if (lang === 'tc') {
+        style = tcStyle;
+      } else if (lang === 'jp') {
+        style = jpStyle;
+      } else if (lang === 'kr') {
+        style = krStyle;
+      } else if (lang === 'en') {
+        style = enStyle;
+      } else if (lang === 'astral') {
+        style = astralStyle;
+      } else {
+        // 兜底：语言未知时用简体中文样式
+        style = scStyle;
+      }
+    }
+    const cf = this.data.customFonts;
+    if (font === 'custom' && cf && (cf.name || cf.body)) {
+      return applyCustomFonts(style, cf);
+    }
     return style;
+  }
+
+  // 数值字体（ATK/DEF/LINK/灵摆刻度/卡密/包号）：仅在「自定义字体」模式下用用户导入的数值字体
+  get numberFont() {
+    return this.data.font === 'custom' ? this.data.customFonts?.number : undefined;
+  }
+
+  get atkDefFontFamily() {
+    return this.numberFont || (this.data.language === 'astral' ? 'ygo-astral' : 'ygo-atk-def');
+  }
+
+  get linkFontFamily() {
+    return this.numberFont || (this.data.language === 'astral' ? 'ygo-astral' : 'ygo-link');
+  }
+
+  get passwordFontFamily() {
+    return this.numberFont || 'ygo-password';
   }
 
   get cardUrl() {

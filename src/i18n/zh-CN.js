@@ -97,13 +97,36 @@ export default {
 
   // 字体选项
   fontDefault: '华康楷体A Std W5',
+  // 各语言「系统默认」对应的实际字体（禁用态下准确展示）
+  fontDefaultSc: '华康楷体A Std W5',
+  fontDefaultTc: '王汉宗中楷体',
+  fontDefaultEn: 'Matrix / Stone Serif',
+  fontDefaultJp: '游戏王 DF 隶书体',
+  fontDefaultKr: '韩文专用字体',
+  fontDefaultAstral: '星光体专用字体',
   fontCustom1: '华康隶书体',
   fontCustom2: '文鼎中粗隶简繁',
   fontXlsj: '经典细隶书简',
   fontXlsf: '经典细隶书繁',
+  fontFzlb: '方正隶变',
   fontHklsw7: '华康隶书体W7',
   fontHklsw5: '华康隶书体W5',
+  fontHktfw5: '华康唐风隶W5',
   fontKt: '楷体',
+  fontDfgls4: 'DFG隶书体4号',
+  fontDfgls5: 'DFG隶书体5号',
+  fontRodin: 'FOT-Rodin Pro M',
+
+  // 自定义字体
+  customFont: '自定义字体',
+  fontSlotName: '卡名',
+  fontSlotBody: '正文',
+  fontSlotNumber: '数值',
+  fontSlotEmpty: '未导入',
+  fontImport: '导入',
+  fontImportSuccess: '字体导入成功',
+  fontImportError: '字体导入失败',
+  fontFormatHint: '支持 .ttf / .otf / .woff / .woff2 格式',
 
   // 对齐
   alignLeft: '左对齐',

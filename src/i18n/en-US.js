@@ -97,13 +97,36 @@ export default {
 
   // Font options
   fontDefault: 'DF KaiShu A Std W5',
+  // Actual default font per card language (shown accurately when disabled)
+  fontDefaultSc: 'DF KaiShu A Std W5',
+  fontDefaultTc: 'HtWang KaiTi',
+  fontDefaultEn: 'Matrix / Stone Serif',
+  fontDefaultJp: 'Yu-Gi-Oh! DF LiShu',
+  fontDefaultKr: 'Korean font',
+  fontDefaultAstral: 'Astral font',
   fontCustom1: 'DF LiShu',
   fontCustom2: 'Arphic LiShu',
   fontXlsj: 'Jing Dian Xi LiShu (SC)',
   fontXlsf: 'Jing Dian Xi LiShu (TC)',
+  fontFzlb: 'FZ LiBian (SC)',
   fontHklsw7: 'DF LiShu W7 (SC)',
   fontHklsw5: 'DF LiShu W5 (TC)',
+  fontHktfw5: 'DF TangFeng LiShu W5 (TC)',
   fontKt: 'KaiTi',
+  fontDfgls4: 'DFG Leisho 4 (JP)',
+  fontDfgls5: 'DFG Leisho 5 (JP)',
+  fontRodin: 'FOT-Rodin Pro M (JP)',
+
+  // Custom font
+  customFont: 'Custom Font',
+  fontSlotName: 'Name',
+  fontSlotBody: 'Body',
+  fontSlotNumber: 'Numbers',
+  fontSlotEmpty: 'Not imported',
+  fontImport: 'Import',
+  fontImportSuccess: 'Font imported successfully',
+  fontImportError: 'Font import failed',
+  fontFormatHint: 'Supports .ttf / .otf / .woff / .woff2',
 
   // Align
   alignLeft: 'Left',

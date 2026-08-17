@@ -1,7 +1,7 @@
 <h1 align="center">🎉 游戏王卡片 - YuGiOh-Card 🎉</h1>
 
 <div align="center">
-  <p>简体中文 | <a href="./README.en.md">English</a></p>
+  <p>简体中文 | <a href="./README.en.md">English</a> | <a href="./README.ja.md">日本語</a></p>
 </div>
 
 <p align="center">
@@ -30,7 +30,8 @@
 | 🎲 **随机一卡**     | 全卡库随机抽取真实卡片                                      |
 | 🌐 **多译名**       | YGOPro / 简中官方 / Master Duel / NWBBS / CNOCG             |
 | 🖼️ **高清卡图**     | 1200×1200 WebP 艺术插画                                     |
-| 🎨 **完整自定义**   | 颜色/渐变/字体、类型/属性/星级/攻防、连接箭头、防伪标、罕贵 |
+| 🎨 **完整自定义**   | 卡名颜色/渐变、类型/属性/星级/攻防、连接箭头、防伪标、罕贵度 |
+| 🖋️ **多字体**       | 简中/繁中/日文/英文 20+ 内置字体 + 自定义导入（woff2/ttf/otf） |
 | 📦 **一键导出**     | JSON 导入/导出、高清 PNG（最高 5x）                         |
 | 🖥️ **桌面应用**     | Windows EXE，独立运行                                       |
 
