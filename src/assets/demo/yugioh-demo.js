@@ -34,9 +34,7 @@ export default {
   copyright: '',
   laser: '',
   rare: '',
-  watermark: '',
   twentieth: '',
-  exportScale: 1,
   radius: true,
   scale: 1,
 };
