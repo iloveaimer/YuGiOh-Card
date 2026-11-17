@@ -30,37 +30,20 @@ export class YugiohBackCard extends Card {
   }
 
   draw() {
-    const steps = ['drawCard', 'drawKonami', 'drawRegister', 'drawLogo', 'updateScale'];
-    for (const step of steps) {
-      try {
-        this[step]();
-      } catch (e) {
-        console.error(`[YugiohBackCard] ${step}() 渲染失败:`, e);
-      }
-    }
+    this.runDrawSteps(['drawCard', 'drawKonami', 'drawRegister', 'drawLogo', 'updateScale']);
   }
 
   drawCard() {
-    if (!this.cardLeaf) {
-      this.cardLeaf = new Image();
-      this.leafer.add(this.cardLeaf);
-    }
-    const cardUrl = `${this.baseImage}/card-${this.data.type}.png`;
-    this.cardLeaf.set({
-      url: cardUrl,
+    this.leaf('cardLeaf', Image).set({
+      url: `${this.baseImage}/card-${this.data.type}.png`,
       cornerRadius: this.data.radius ? 24 : 0,
       zIndex: 0,
     });
   }
 
   drawKonami() {
-    if (!this.konamiLeaf) {
-      this.konamiLeaf = new Image();
-      this.leafer.add(this.konamiLeaf);
-    }
-    const konamiUrl = `${this.baseImage}/konami.png`;
-    this.konamiLeaf.set({
-      url: konamiUrl,
+    this.leaf('konamiLeaf', Image).set({
+      url: `${this.baseImage}/konami.png`,
       x: 94,
       y: 95,
       visible: this.data.konami,
@@ -69,13 +52,8 @@ export class YugiohBackCard extends Card {
   }
 
   drawRegister() {
-    if (!this.registerLeaf) {
-      this.registerLeaf = new Image();
-      this.leafer.add(this.registerLeaf);
-    }
-    const registerUrl = `${this.baseImage}/register.png`;
-    this.registerLeaf.set({
-      url: registerUrl,
+    this.leaf('registerLeaf', Image).set({
+      url: `${this.baseImage}/register.png`,
       x: 370,
       y: 114,
       visible: this.data.register,
@@ -84,10 +62,6 @@ export class YugiohBackCard extends Card {
   }
 
   drawLogo() {
-    if (!this.logoLeaf) {
-      this.logoLeaf = new Image();
-      this.leafer.add(this.logoLeaf);
-    }
     const logoUrl = this.data.logo ? `${this.baseImage}/logo-${this.data.logo}.png` : '';
     let x, y;
     if (this.data.logo === 'ocg') {
@@ -100,7 +74,7 @@ export class YugiohBackCard extends Card {
       x = 864;
       y = 1763;
     }
-    this.logoLeaf.set({
+    this.leaf('logoLeaf', Image).set({
       url: logoUrl,
       x,
       y,

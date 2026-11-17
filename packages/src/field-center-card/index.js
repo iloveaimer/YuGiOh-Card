@@ -27,22 +27,11 @@ export class FieldCenterCard extends Card {
   }
 
   draw() {
-    const steps = ['drawCard', 'drawImage', 'drawMask', 'updateScale'];
-    for (const step of steps) {
-      try {
-        this[step]();
-      } catch (e) {
-        console.error(`[FieldCenterCard] ${step}() 渲染失败:`, e);
-      }
-    }
+    this.runDrawSteps(['drawCard', 'drawImage', 'drawMask', 'updateScale']);
   }
 
   drawCard() {
-    if (!this.cardLeaf) {
-      this.cardLeaf = new Image();
-      this.leafer.add(this.cardLeaf);
-    }
-    this.cardLeaf.set({
+    this.leaf('cardLeaf', Image).set({
       url: this.cardUrl,
       cornerRadius: this.data.radius ? 24 : 0,
       zIndex: 0,
@@ -50,13 +39,7 @@ export class FieldCenterCard extends Card {
   }
 
   drawImage() {
-    if (!this.imageLeaf) {
-      this.imageLeaf = new Rect();
-      this.listenImageStatus(this.imageLeaf);
-      this.leafer.add(this.imageLeaf);
-    }
-
-    this.imageLeaf.set({
+    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
       width: 1308,
       height: 1907,
       x: 90,
@@ -73,14 +56,8 @@ export class FieldCenterCard extends Card {
   }
 
   drawMask() {
-    if (!this.maskLeaf) {
-      this.maskLeaf = new Image();
-      this.leafer.add(this.maskLeaf);
-    }
-
-    const maskUrl = `${this.baseImage}/card-mask.png`;
-    this.maskLeaf.set({
-      url: maskUrl,
+    this.leaf('maskLeaf', Image).set({
+      url: `${this.baseImage}/card-mask.png`,
       cornerRadius: this.data.radius ? 24 : 0,
       visible: !this.data.cardBack,
       zIndex: 20,

@@ -16,7 +16,7 @@
  * 在浏览器环境中，模块还会在字体加载完成后自动重新执行一次排版，以确保测量结果准确。
  */
 import { Group, Text } from 'leafer-unified';
-import { isBrowser } from '../utils/index.js';
+import { getFontEpoch, isBrowser } from '../utils/index.js';
 import { splitBreakWordWithBracket } from './split-break-word.js';
 import { normalizeCardText } from './text-normalize.js';
 
@@ -24,8 +24,8 @@ const rubyTokenPattern = /(\[[^\[\]()]*\([^\[\]()]*\)])/g;
 const rubyRtPattern = /^\[([^\[\]()]+)\(([^\[\]()]*)\)]$/;
 const baseLineHeight = 1.15; // 默认正文与注音行高倍率。
 const noCompressText = '●①②③④⑤⑥⑦⑧⑨⑩©★☆'; // 不参与压缩的特殊字符集合（首行压缩、末行压缩均生效）。
-const compressBinarySearchStartScale = 0.15; // 高度压缩时二分搜索的初始缩放值。
 const compressBinarySearchPrecision = 0.01; // 高度压缩时二分搜索的停止精度。
+const compressBinarySearchLimit = 32; // 每个字号档位的搜索预算，避免无解时持续到浮点下溢。
 const autoSmallSizeScaleThreshold = 0.7; // autoSmallSize 触发切换到小字模式的缩放阈值。
 const rtStretchRate = 0.9; // 注音可通过字距拉伸覆盖正文宽度时采用的目标占比。
 const rtCompressRate = 0.6; // 注音过宽时允许压缩到的最小横向比例。
@@ -35,6 +35,7 @@ const gradientStrokeColor = 'rgba(0, 0, 0, 0.6)'; // 渐变模式下正文描边
 const gradientStrokeWidthRate = 0.025; // 渐变模式下描边宽度相对字号的倍率。
 const gradientShadowBlurRate = 0.015; // 渐变模式下阴影模糊相对字号的倍率。
 const gradientShadowOffsetYRate = 0.025; // 渐变模式下阴影纵向偏移相对字号的倍率。
+const exceedsHeight = (actual, limit) => actual - limit > 8 * Number.EPSILON * Math.max(1, Math.abs(actual), Math.abs(limit));
 // 日文假名宽度精修（kanaCompact 开启时生效，倍率参考官方卡片排版）
 const smallKanaChars = 'ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ';
 const hiraganaRange = /^[\u3041-\u3096]$/;
@@ -104,15 +105,46 @@ export class CompressText extends Group {
       zIndex: 0,
     };
 
+    // 字体就绪后重排的定时器句柄；销毁时必须清理，否则会对已销毁的 group 重排
+    this.fontReadyTimer = null;
+    this.fontReadyCancelled = false;
+    this.fontEpoch = getFontEpoch();
+
     this.initData(data);
 
     if (isBrowser) {
       document.fonts.ready.then(() => {
-        setTimeout(() => {
+        // 字体就绪前实例可能已被销毁（切换卡类型会重建全部 CompressText），跳过重排
+        if (this.fontReadyCancelled) {
+          return;
+        }
+        this.fontReadyTimer = setTimeout(() => {
+          this.fontReadyTimer = null;
+          // 构建后没有新字体加载完成，字形度量未变，重排只会白跑一次全量布局
+          const epoch = getFontEpoch();
+          if (epoch === this.fontEpoch) {
+            return;
+          }
+          this.fontEpoch = epoch;
           this.compressText();
         }, 250);
       });
     }
+  }
+
+  /**
+   * 销毁实例，并取消字体就绪后的待执行重排。
+   *
+   * document.fonts.ready 是全局 Promise，与实例生命周期无关；
+   * 实例销毁后若仍执行 compressText，会往已销毁的 group 上挂节点。
+   */
+  destroy(...args) {
+    this.fontReadyCancelled = true;
+    if (this.fontReadyTimer) {
+      clearTimeout(this.fontReadyTimer);
+      this.fontReadyTimer = null;
+    }
+    return super.destroy(...args);
   }
 
   /**
@@ -233,6 +265,29 @@ export class CompressText extends Group {
    */
   getCurrentFontSize() {
     return this.isSmallSize ? this.smallFontSize : this.fontSize;
+  }
+
+  /**
+   * 获取正文单行的逻辑高度。
+   *
+   * 该值只包含字号、行高倍率与 fontScale，不包含 Group 的 scaleY；
+   * Group 缩放在输出 bounds 时统一应用一次。
+   *
+   * @returns {number} 单行逻辑高度。
+   */
+  getLineHeight() {
+    return this.getCurrentFontSize() * this.lineHeight * this.fontScale;
+  }
+
+  /**
+   * 获取当前已排内容的逻辑高度。
+   *
+   * 未排任何内容时返回 0；否则按当前行起点推算到最后一行行底。
+   *
+   * @returns {number} 布局高度。
+   */
+  getLayoutHeight() {
+    return this.rubyList.length ? this.currentY + this.getLineHeight() : 0;
   }
 
   /**
@@ -437,12 +492,13 @@ export class CompressText extends Group {
    */
   createRubyLeaf(ruby) {
     const rubyLeaf = new Text(this.getRubyTextStyle(ruby));
-    const bounds = rubyLeaf.getBounds('content', 'inner');
+    const bounds = ruby.text === '\n' ? { width: 0 } : rubyLeaf.getBounds('content', 'inner');
     const spacingWidth = ruby.text === ' ' ? this.wordSpacing : 0;
 
     ruby.rubyLeaf = rubyLeaf;
     ruby.originalWidth = bounds.width + spacingWidth;
-    ruby.originalHeight = bounds.height;
+    ruby.normalWidth = ruby.originalWidth;
+    ruby.originalHeight = ruby.text === '\n' ? 0 : this.getLineHeight();
     ruby.width = ruby.originalWidth;
     ruby.height = ruby.originalHeight;
 
@@ -482,6 +538,7 @@ export class CompressText extends Group {
 
     if (minWidth && ruby.originalWidth < minWidth) {
       ruby.originalWidth = minWidth;
+      ruby.normalWidth = minWidth;
       ruby.width = minWidth;
     }
   }
@@ -749,7 +806,7 @@ export class CompressText extends Group {
    * @returns {boolean} 是否超出高度限制。
    */
   doesOverflowHeight(lastRuby) {
-    return this.height && lastRuby && this.currentY + lastRuby.height > this.height;
+    return !!(this.height && lastRuby && exceedsHeight(this.getLayoutHeight(), this.height));
   }
 
   /**
@@ -762,7 +819,48 @@ export class CompressText extends Group {
    * @returns {boolean} 是否已经达到单行高度边界。
    */
   reachedSingleLineHeightLimit(lastRuby) {
-    return !!(this.height && lastRuby && this.currentLine === 0 && lastRuby.height > this.height);
+    return !!(this.height && lastRuby && this.currentLine === 0 && exceedsHeight(this.getLineHeight(), this.height));
+  }
+
+  /**
+   * 计算当前内容实际需要的下界高度。
+   *
+   * 固定前缀被换行拆出的行数同样计入；最后一个硬换行之后至少还需要一行。
+   *
+   * @returns {number} 下界高度。
+   */
+  getMinimumLayoutHeight() {
+    let lines = this.rubyList.length ? 1 : 0;
+    for (const ruby of this.rubyList) if (ruby.text === '\n') lines = ruby.line + 2;
+    return lines * this.getLineHeight();
+  }
+
+  /**
+   * 在当前字号档位下寻找可行的最大缩放比例。
+   *
+   * 无解时返回 null，由调用方恢复最终候选并保留可读性。
+   *
+   * @returns {number|null} 可行缩放比例，或 null。
+   */
+  findHeightScale() {
+    const lastRuby = this.rubyList[this.rubyList.length - 1];
+    if (!this.doesOverflowHeight(lastRuby)) return this.textScale;
+    if (exceedsHeight(this.getMinimumLayoutHeight(), this.height)) return null;
+    let start = 0;
+    let end = this.textScale;
+    let best = null;
+    for (let iteration = 0; iteration < compressBinarySearchLimit; iteration++) {
+      const scale = (start + end) / 2;
+      if (!(scale > 0) || scale === start || scale === end) break;
+      this.textScale = scale;
+      this.updateTextScale();
+      const overflow = this.doesOverflowHeight(lastRuby);
+      if (overflow) end = scale;
+      else start = best = scale;
+      // 保持原先成功路径的试排顺序和精度，避免正常压缩比例发生变化。
+      if (!overflow && end - start <= compressBinarySearchPrecision) break;
+    }
+    return best;
   }
 
   // 压缩与对齐
@@ -782,38 +880,28 @@ export class CompressText extends Group {
       this.firstLineTextScale = this.getFirstLineScale();
       this.updateTextScale();
     }
-    const lastRuby = this.rubyList[this.rubyList.length - 1];
-    // 用二分法获取最大的 scale，精度由 compressBinarySearchPrecision 控制。
-    if (this.doesOverflowHeight(lastRuby)) {
-      if (this.reachedSingleLineHeightLimit(lastRuby)) {
-        return;
-      }
-
-      let scale = compressBinarySearchStartScale;
-      let start = 0;
-      let end = this.textScale;
-      while (scale > 0) {
-        scale = (start + end) / 2;
-        this.textScale = scale;
+    const normal = this.findHeightScale();
+    let selected = normal ?? 1;
+    const canUseSmall = this.autoSmallSize && this.fontScale <= 1 && !this.isSmallSize && this.smallFontSize > 0 && this.smallFontSize < this.fontSize;
+    if (canUseSmall && (normal === null || normal < autoSmallSizeScaleThreshold)) {
+      this.isSmallSize = true;
+      this.updateFontSize();
+      if (normal === null && this.firstLineCompress && this.width) {
+        this.firstLineTextScale = this.getFirstLineScale();
         this.updateTextScale();
-        if (this.reachedSingleLineHeightLimit(lastRuby)) {
-          break;
-        }
-
-        const overflowHeight = this.doesOverflowHeight(lastRuby);
-        overflowHeight ? end = scale : start = scale;
-        if (!overflowHeight && end - start <= compressBinarySearchPrecision) {
-          if (this.autoSmallSize && scale < autoSmallSizeScaleThreshold && this.fontScale <= 1 && !this.isSmallSize) {
-            this.isSmallSize = true;
-            this.updateFontSize();
-            scale = compressBinarySearchStartScale;
-            start = 0;
-            end = 1;
-          } else {
-            break;
-          }
-        }
       }
+      const small = this.findHeightScale();
+      if (small !== null || normal === null) {
+        selected = small ?? 1;
+      } else {
+        this.isSmallSize = false;
+        this.updateFontSize();
+        selected = normal;
+      }
+    }
+    if (this.textScale !== selected) {
+      this.textScale = selected;
+      this.updateTextScale();
     }
   }
 
@@ -835,7 +923,8 @@ export class CompressText extends Group {
    * @returns {number} 当前行剩余宽度。
    */
   getLineRemainWidth(lineList) {
-    const lastRuby = lineList[lineList.length - 1];
+    const lastRuby = lineList.findLast(ruby => ruby.text !== '\n');
+    if (!lastRuby) return 0;
     const lastRubyLeaf = lastRuby.rubyLeaf;
     const lastPaddingRight = lastRuby.paddingRight || 0;
 
@@ -1087,6 +1176,11 @@ export class CompressText extends Group {
    * @param {boolean} lastNewline 当前是否最后一个显式换行分组。
    */
   layoutItemList(itemList, newlineIndex, lastNewline) {
+    if (itemList.some(item => item.ruby.text === '\n')) {
+      this.positionItemListRuby(itemList);
+      this.addLine();
+      return;
+    }
     this.updateItemRubyScale(itemList, newlineIndex, lastNewline);
     const itemWidth = this.getItemWidth(itemList);
 
@@ -1118,6 +1212,11 @@ export class CompressText extends Group {
    */
   updateTextScale() {
     this.resetLayoutPosition();
+    // 试排中的行尾空格可能在下一轮回到行内，先恢复节点并清除旧行号。
+    this.rubyList.forEach(ruby => {
+      ruby.line = -1;
+      ruby.rubyLeaf.visible = ruby.text !== '\n';
+    });
 
     this.newlineList.forEach((newline, newlineIndex) => {
       this.layoutNewlineItems(newline, newlineIndex);
@@ -1137,11 +1236,10 @@ export class CompressText extends Group {
     this.rubyList.forEach(ruby => {
       const rubyLeaf = ruby.rubyLeaf;
       rubyLeaf.fontSize = fontSize * this.fontScale;
-      rubyLeaf.lineHeight = fontSize * this.lineHeight * this.fontScale;
-      ruby.originalWidth *= sizePercent;
-      ruby.originalHeight *= sizePercent;
-      ruby.width *= sizePercent;
-      ruby.height *= sizePercent;
+      rubyLeaf.lineHeight = this.getLineHeight();
+      // 从本次排版的原字号测量计算，保留正常小字效果并避免恢复候选时累计缩放。
+      ruby.width = ruby.originalWidth = ruby.normalWidth * sizePercent;
+      ruby.height = ruby.originalHeight = ruby.text === '\n' ? 0 : this.getLineHeight();
     });
     this.updateTextScale();
   }
@@ -1158,7 +1256,7 @@ export class CompressText extends Group {
     rubyLeaf.x = this.currentX + paddingLeft;
     rubyLeaf.y = this.currentY;
     this.currentX += ruby.width + paddingLeft + paddingRight;
-    ruby.line = ruby.text === '\n' ? this.currentLine - 1 : this.currentLine;
+    ruby.line = this.currentLine;
   }
 
   /**
@@ -1168,14 +1266,13 @@ export class CompressText extends Group {
    */
   addLine() {
     this.removeLineLastSpace(this.currentLine);
-    const fontSize = this.getCurrentFontSize();
     this.currentX = 0;
-    this.currentY += fontSize * this.lineHeight * this.fontScale;
     this.currentLine++;
+    this.currentY = this.currentLine * this.getLineHeight();
   }
 
   /**
-   * 删除指定行尾部连续的空格项。
+   * 隐藏指定行尾部连续的空格项，保留节点供后续试排复用。
    *
    * 这些空格在排版结束后不应继续占据宽度，因此会同步回退 currentX。
    *
@@ -1187,6 +1284,7 @@ export class CompressText extends Group {
       if (ruby.line !== line) {
         continue;
       }
+      if (ruby.text === '\n') continue;
       if (ruby.text !== ' ') {
         break;
       }
@@ -1194,7 +1292,7 @@ export class CompressText extends Group {
       const paddingLeft = ruby.paddingLeft || 0;
       const paddingRight = ruby.paddingRight || 0;
       this.currentX -= ruby.width + paddingLeft + paddingRight;
-      rubyLeaf.destroy();
+      rubyLeaf.visible = false;
       ruby.line = -1;
     }
   }
@@ -1369,11 +1467,14 @@ export class CompressText extends Group {
       height: 0,
     };
     this.rubyLineMap.forEach(lineList => {
-      const lastRuby = lineList[lineList.length - 1];
+      const lastRuby = lineList.findLast(ruby => ruby.text !== '\n');
+      if (!lastRuby) return;
       const lastRubyLeaf = lastRuby.rubyLeaf;
       const lastPaddingRight = lastRuby.paddingRight || 0;
-      this.bounds.width = Math.max(this.bounds.width, lastRubyLeaf.x + lastRuby.width + lastPaddingRight) * this.scaleX;
-      this.bounds.height = Math.max(this.bounds.height, lastRubyLeaf.y + lastRuby.height) * this.scaleY;
+      this.bounds.width = Math.max(this.bounds.width, lastRubyLeaf.x + lastRuby.width + lastPaddingRight);
     });
+    this.bounds.height = this.getLayoutHeight();
+    this.bounds.width *= this.scaleX;
+    this.bounds.height *= this.scaleY;
   }
 }

@@ -247,6 +247,58 @@ test('CompressText keeps malformed bracket text plain while parsing following va
   assert.equal(flatItemList.slice(0, validRubyIndex).map(item => item.ruby.text).join(''), '[その]カードを');
 });
 
+test('CompressText applies group scaling once to multiline bounds', () => {
+  const instance = new NewCompressText({ text: 'one two three\nx\ny', fontFamily: 'ygo-en', fontSize: 20, width: 300, textAlign: 'left' });
+  try {
+    assert.equal(instance.currentLine, 2);
+    const unscaledBounds = { ...instance.bounds };
+    for (const [scaleX, scaleY] of [[2, 3], [0.5, 0.75], [1, 1]]) {
+      instance.set({ scaleX, scaleY });
+      const expectedBounds = {
+        width: unscaledBounds.width * scaleX,
+        height: unscaledBounds.height * scaleY,
+      };
+      assert.deepEqual(instance.bounds, expectedBounds);
+      instance.createBounds();
+      assert.deepEqual(instance.bounds, expectedBounds);
+    }
+  } finally {
+    instance.destroy();
+  }
+});
+
+test('CompressText preserves space nodes across trial layouts', () => {
+  const instance = new NewCompressText({
+    text: 'one two three four five six seven eight',
+    fontFamily: 'ygo-en', fontSize: 20, lineHeight: 1.05, width: 120,
+  });
+  try {
+    const leaves = instance.rubyList.map(ruby => ruby.rubyLeaf);
+    const snapshot = () => instance.rubyList.map(ruby => ({
+      text: ruby.text, line: ruby.line, x: ruby.rubyLeaf.x, y: ruby.rubyLeaf.y, visible: ruby.rubyLeaf.visible,
+    }));
+    const before = snapshot();
+    const hiddenSpaces = instance.rubyList.filter(ruby => ruby.text === ' ' && ruby.line < 0);
+    assert.ok(hiddenSpaces.length > 0);
+    let restoredSpace = false;
+    for (const scale of [0.65, 1, 0.8, 1]) {
+      instance.textScale = scale;
+      instance.updateTextScale();
+      instance.alignRuby();
+      instance.rubyList.forEach((ruby, index) => {
+        assert.equal(ruby.rubyLeaf, leaves[index]);
+        assert.ok(!ruby.rubyLeaf.destroyed);
+        assert.equal(ruby.rubyLeaf.visible, ruby.line >= 0);
+      });
+      restoredSpace ||= hiddenSpaces.some(ruby => ruby.line >= 0);
+    }
+    assert.ok(restoredSpace);
+    assert.deepEqual(snapshot(), before);
+  } finally {
+    instance.destroy();
+  }
+});
+
 test('CompressText helper getters reflect current size and padding', () => {
   const instance = new NewCompressText({ text: '[魔(ま)]法', width: 200, ...baseConfig });
   const ruby = instance.rubyList[0];
@@ -327,14 +379,6 @@ test('CompressText set update sequences match yugioh-card@1.9.0', () => {
       textAlign: 'center',
       firstLineCompress: false,
     },
-    {
-      text: '[这(これ)]はテスト[用(よう)]の[長(なが)]い[文(ぶん)]です。',
-      width: 180,
-      height: 70,
-      autoSmallSize: true,
-      smallFontSize: 14,
-      textAlign: 'justify',
-    },
   ];
 
   const next = new NewCompressText(initialConfig);
@@ -345,6 +389,28 @@ test('CompressText set update sequences match yugioh-card@1.9.0', () => {
     old.set(update);
     assert.deepEqual(summarizeRuntimeState(next), summarizeRuntimeState(old));
   });
+});
+
+test('CompressText 小字回退后按布局高度判定，不做无效压缩', () => {
+  const instance = new NewCompressText({
+    ...baseConfig,
+    text: '[这(これ)]はテスト[用(よう)]の[長(なが)]い[文(ぶん)]です。',
+    width: 180,
+    height: 70,
+    autoSmallSize: true,
+    smallFontSize: 14,
+    textAlign: 'justify',
+  });
+  try {
+    const lastRuby = instance.rubyList[instance.rubyList.length - 1];
+    // 高度判定改看整体布局高度：小字两行约 37px，未超 70px，不应再压缩到 0.99
+    assert.equal(instance.isSmallSize, true);
+    assert.equal(instance.textScale, 1);
+    assert.equal(instance.doesOverflowHeight(lastRuby), false);
+    assert.ok(instance.bounds.height <= 70);
+  } finally {
+    instance.destroy();
+  }
 });
 
 test('CompressText getFirstLineScale matches manual width calculation', () => {
@@ -378,7 +444,7 @@ test('CompressText overflow helper reflects current layout height', () => {
   assert.equal(instance.doesOverflowHeight(lastRuby), true);
 });
 
-test('CompressText stops height compression after reaching one-line height limit', () => {
+test('CompressText keeps unresolvable one-line height readable and stops searching', () => {
   const instance = new NewCompressText({
     ...baseConfig,
     text: '[自(じ)][分(ぶん)]フィールドのカード１枚を対象として発動できる。',
@@ -396,8 +462,8 @@ test('CompressText stops height compression after reaching one-line height limit
   instance.set({ height: 12 });
 
   const lastRuby = instance.rubyList[instance.rubyList.length - 1];
-  assert.equal(instance.currentLine, 0);
-  assert.equal(instance.reachedSingleLineHeightLimit(lastRuby), true);
+  assert.equal(instance.textScale, 1);
+  assert.ok(instance.rubyList.every(ruby => ruby.rubyLeaf.scaleX > 0));
   assert.equal(instance.doesOverflowHeight(lastRuby), true);
   assert.ok(updateTextScaleCount < 40);
 });

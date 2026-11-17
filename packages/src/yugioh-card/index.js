@@ -1,7 +1,7 @@
 import { Group, Image, Rect, Text } from 'leafer-unified';
 import { Card } from '../card/index.js';
 import { CompressText } from '../compress-text/index.js';
-import { numberToFull } from '../utils/index.js';
+import { collectFontFamilies, numberToFull } from '../utils/index.js';
 import scStyle from './style/sc-style.js';
 import tcStyle from './style/tc-style.js';
 import jpStyle from './style/jp-style.js';
@@ -21,24 +21,39 @@ import dfgls4Style from './style/dfgls4-style.js';
 import dfgls5Style from './style/dfgls5-style.js';
 import rodinStyle from './style/rodin-style.js';
 
-// 将用户自定义字体覆盖到基础 style（深拷贝，避免污染模块级单例）
+// 将用户自定义字体覆盖到基础 style（逐层浅拷贝，避免污染模块级单例）
 function applyCustomFonts(style, cf) {
-  const s = JSON.parse(JSON.stringify(style));
+  const s = { ...style };
   if (cf.name) {
-    s.name = s.name || {};
-    s.name.fontFamily = cf.name;
+    s.name = { ...(s.name || {}), fontFamily: cf.name };
   }
   if (cf.body) {
     s.fontFamily = cf.body;
     // 正文相关的子字体（英/韩的类型栏、灵摆描述等使用独立 race 字体，一并覆盖）
     ['spellTrap', 'effect', 'description', 'pendulumDescription'].forEach(key => {
       if (s[key]) {
-        s[key].fontFamily = cf.body;
+        s[key] = { ...s[key], fontFamily: cf.body };
       }
     });
   }
   return s;
 }
+
+// 周年标记素材映射：值 → 素材名（未识别或空值时不显示）
+// 同时兼容旧数据 `twentieth: true`
+const TWENTIETH_ASSET_MAP = {
+  'true': 'twentieth',
+  twentieth: 'twentieth',
+  twentyfive: 'twentyfive',
+};
+
+// 周年标记位置：锚定卡面底边居中，避免硬编码像素坐标随模板尺寸失配
+// offsetX 为相对卡面水平中心的偏移，offsetY 为距卡面底边的距离
+const TWENTIETH_POSITION = {
+  around: { type: 'percent', x: 0.5, y: 1 },
+  offsetX: 0,
+  offsetY: 141,
+};
 
 export class YugiohCard extends Card {
   cardLeaf = null;
@@ -118,30 +133,18 @@ export class YugiohCard extends Card {
   }
 
   draw() {
-    const steps = [
+    this.runDrawSteps([
       'drawCard', 'drawName', 'drawAttribute', 'drawLevel', 'drawRank',
       'drawSpellTrap', 'drawImage', 'drawMask', 'drawPendulum',
       'drawPendulumDescription', 'drawPackage', 'drawLinkArrow',
       'drawEffect', 'drawDescription', 'drawAtkDefLink', 'drawPassword',
       'drawCopyright', 'drawLaser', 'drawRare', 'drawAttributeRare',
       'drawTwentieth', 'updateScale',
-    ];
-    for (const step of steps) {
-      try {
-        this[step]();
-      } catch (e) {
-        console.error(`[YugiohCard] ${step}() 渲染失败:`, e);
-      }
-    }
+    ]);
   }
 
   drawCard() {
-    if (!this.cardLeaf) {
-      this.cardLeaf = new Image();
-      this.listenImageStatus(this.cardLeaf);
-      this.leafer.add(this.cardLeaf);
-    }
-    this.cardLeaf.set({
+    this.leaf('cardLeaf', Image, leaf => this.listenImageStatus(leaf)).set({
       url: this.cardUrl,
       cornerRadius: this.data.radius ? 24 : 0,
       zIndex: 0,
@@ -151,11 +154,7 @@ export class YugiohCard extends Card {
   drawName() {
     const { name } = this.style;
 
-    if (!this.nameLeaf) {
-      this.nameLeaf = new CompressText();
-      this.leafer.add(this.nameLeaf);
-    }
-    this.nameLeaf.set({
+    this.leaf('nameLeaf', CompressText).set({
       text: this.data.name,
       fontFamily: name.fontFamily,
       fontSize: name.fontSize,
@@ -181,11 +180,7 @@ export class YugiohCard extends Card {
   }
 
   drawAttribute() {
-    if (!this.attributeLeaf) {
-      this.attributeLeaf = new Image();
-      this.leafer.add(this.attributeLeaf);
-    }
-    this.attributeLeaf.set({
+    this.leaf('attributeLeaf', Image).set({
       url: this.attributeUrl,
       x: 1163,
       y: 96,
@@ -195,19 +190,16 @@ export class YugiohCard extends Card {
   }
 
   drawLevel() {
-    if (!this.levelLeaf) {
-      this.levelLeaf = new Group();
+    const levelLeaf = this.leaf('levelLeaf', Group, group => {
       for (let i = 0; i < 13; i++) {
-        const level = new Image();
-        this.levelLeaf.add(level);
+        group.add(new Image());
       }
-      this.leafer.add(this.levelLeaf);
-    }
+    });
 
     const levelUrl = `${this.baseImage}/level.png`;
     const levelWidth = 88;
     const right = this.data.level < 13 ? 147 : 101;
-    this.levelLeaf.children.forEach((level, index) => {
+    levelLeaf.children.forEach((level, index) => {
       level.set({
         url: levelUrl,
         x: this.cardWidth - right - index * (levelWidth + 4),
@@ -217,26 +209,23 @@ export class YugiohCard extends Card {
       });
     });
 
-    this.levelLeaf.set({
+    levelLeaf.set({
       visible: this.showLevel,
       zIndex: 10,
     });
   }
 
   drawRank() {
-    if (!this.rankLeaf) {
-      this.rankLeaf = new Group();
+    const rankLeaf = this.leaf('rankLeaf', Group, group => {
       for (let i = 0; i < 13; i++) {
-        const rank = new Image();
-        this.rankLeaf.add(rank);
+        group.add(new Image());
       }
-      this.leafer.add(this.rankLeaf);
-    }
+    });
 
     const rankUrl = `${this.baseImage}/rank.png`;
     const rankWidth = 88;
     const left = this.data.rank < 13 ? 147 : 101;
-    this.rankLeaf.children.forEach((rank, index) => {
+    rankLeaf.children.forEach((rank, index) => {
       rank.set({
         url: rankUrl,
         x: left + index * (rankWidth + 4),
@@ -245,26 +234,18 @@ export class YugiohCard extends Card {
       });
     });
 
-    this.rankLeaf.set({
+    rankLeaf.set({
       visible: this.showRank,
       zIndex: 10,
     });
   }
 
   drawSpellTrap() {
-    if (!this.spellTrapLeaf) {
-      this.spellTrapLeaf = new Group();
-
-      const rightText = new CompressText();
-      const spellTrapIcon = new Image();
-      const leftText = new CompressText();
-
-      this.spellTrapLeaf.add(rightText);
-      this.spellTrapLeaf.add(spellTrapIcon);
-      this.spellTrapLeaf.add(leftText);
-
-      this.leafer.add(this.spellTrapLeaf);
-    }
+    const spellTrapLeaf = this.leaf('spellTrapLeaf', Group, group => {
+      group.add(new CompressText());
+      group.add(new Image());
+      group.add(new CompressText());
+    });
 
     const { spellTrap } = this.style;
     const { icon } = spellTrap;
@@ -276,9 +257,9 @@ export class YugiohCard extends Card {
     const letterSpacing = spellTrap.letterSpacing || 0;
     const wordSpacing = spellTrap.wordSpacing || 0;
 
-    const rightText = this.spellTrapLeaf.children[0];
-    const spellTrapIcon = this.spellTrapLeaf.children[1];
-    const leftText = this.spellTrapLeaf.children[2];
+    const rightText = spellTrapLeaf.children[0];
+    const spellTrapIcon = spellTrapLeaf.children[1];
+    const leftText = spellTrapLeaf.children[2];
 
     rightText.set({
       text: rightBracket,
@@ -313,20 +294,14 @@ export class YugiohCard extends Card {
     const leftBounds = leftText.bounds;
     leftText.x = spellTrapIcon.x - (this.data.icon ? (icon.marginLeft || 0) : 0) - leftBounds.width;
 
-    this.spellTrapLeaf.set({
+    spellTrapLeaf.set({
       visible: ['spell', 'trap'].includes(this.data.type),
       zIndex: 10,
     });
   }
 
   drawImage() {
-    if (!this.imageLeaf) {
-      this.imageLeaf = new Rect();
-      this.listenImageStatus(this.imageLeaf);
-      this.leafer.add(this.imageLeaf);
-    }
-
-    this.imageLeaf.set({
+    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
       width: this.data.type === 'pendulum' ? 1205 : 1054,
       height: this.data.type === 'pendulum' ? 1205 : 1054,
       x: this.data.type === 'pendulum' ? 94 : 170,
@@ -343,13 +318,8 @@ export class YugiohCard extends Card {
   }
 
   drawMask() {
-    if (!this.maskLeaf) {
-      this.maskLeaf = new Image();
-      this.leafer.add(this.maskLeaf);
-    }
-
     const maskUrl = this.data.type === 'pendulum' ? `${this.baseImage}/card-mask-pendulum.png` : `${this.baseImage}/card-mask.png`;
-    this.maskLeaf.set({
+    this.leaf('maskLeaf', Image).set({
       url: maskUrl,
       x: this.data.type === 'pendulum' ? 68 : 117,
       y: this.data.type === 'pendulum' ? 342 : 322,
@@ -358,17 +328,13 @@ export class YugiohCard extends Card {
   }
 
   drawPendulum() {
-    if (!this.pendulumLeaf) {
-      this.pendulumLeaf = new Group();
-      const leftPendulum = new Text();
-      const rightPendulum = new Text();
-      this.pendulumLeaf.add(leftPendulum);
-      this.pendulumLeaf.add(rightPendulum);
-      this.leafer.add(this.pendulumLeaf);
-    }
+    const pendulumLeaf = this.leaf('pendulumLeaf', Group, group => {
+      group.add(new Text());
+      group.add(new Text());
+    });
 
-    const leftPendulum = this.pendulumLeaf.children[0];
-    const rightPendulum = this.pendulumLeaf.children[1];
+    const leftPendulum = pendulumLeaf.children[0];
+    const rightPendulum = pendulumLeaf.children[1];
 
     let left = this.data.language === 'astral' ? 144 : 145;
     leftPendulum.set({
@@ -394,21 +360,16 @@ export class YugiohCard extends Card {
       around: { type: 'percent', x: 0.5, y: 0 },
     });
 
-    this.pendulumLeaf.set({
+    pendulumLeaf.set({
       visible: this.data.type === 'pendulum',
       zIndex: 30,
     });
   }
 
   drawPendulumDescription() {
-    if (!this.pendulumDescriptionLeaf) {
-      this.pendulumDescriptionLeaf = new CompressText();
-      this.leafer.add(this.pendulumDescriptionLeaf);
-    }
-
     const { pendulumDescription } = this.style;
 
-    this.pendulumDescriptionLeaf.set({
+    this.leaf('pendulumDescriptionLeaf', CompressText).set({
       text: this.data.pendulumDescription,
       fontFamily: pendulumDescription.fontFamily,
       fontSize: pendulumDescription.fontSize,
@@ -430,12 +391,8 @@ export class YugiohCard extends Card {
   }
 
   drawPackage() {
-    if (!this.packageLeaf) {
-      this.packageLeaf = new CompressText();
-      this.leafer.add(this.packageLeaf);
-    }
-
-    this.packageLeaf.set({
+    const packageLeaf = this.leaf('packageLeaf', CompressText);
+    packageLeaf.set({
       text: this.data.package,
       fontFamily: this.passwordFontFamily,
       fontSize: 40,
@@ -445,23 +402,20 @@ export class YugiohCard extends Card {
       zIndex: 30,
     });
     if (this.data.type === 'pendulum') {
-      this.packageLeaf.x = 116;
+      packageLeaf.x = 116;
     } else {
-      const bounds = this.packageLeaf.bounds;
+      const bounds = packageLeaf.bounds;
       const right = this.data.type === 'monster' && this.data.cardType === 'link' ? 252 : 148;
-      this.packageLeaf.x = this.cardWidth - right - bounds.width;
+      packageLeaf.x = this.cardWidth - right - bounds.width;
     }
   }
 
   drawLinkArrow() {
-    if (!this.linkArrowLeaf) {
-      this.linkArrowLeaf = new Group();
+    this.leaf('linkArrowLeaf', Group, group => {
       for (let i = 0; i < 8; i++) {
-        const arrow = new Image();
-        this.linkArrowLeaf.add(arrow);
+        group.add(new Image());
       }
-      this.leafer.add(this.linkArrowLeaf);
-    }
+    });
 
     const arrowOnList = [
       { x: 555, y: 278, url: this.baseImage + '/arrow-up-on.png' },
@@ -501,17 +455,12 @@ export class YugiohCard extends Card {
   }
 
   drawEffect() {
-    if (!this.effectLeaf) {
-      this.effectLeaf = new CompressText();
-      this.leafer.add(this.effectLeaf);
-    }
-
     const { effect } = this.style;
 
     const leftBracket = ['en', 'kr'].includes(this.data.language) ? '[' : '【';
     const rightBracket = ['en', 'kr'].includes(this.data.language) ? ']' : '】';
 
-    this.effectLeaf.set({
+    this.leaf('effectLeaf', CompressText).set({
       text: leftBracket + this.data.monsterType + rightBracket,
       fontFamily: effect.fontFamily,
       fontSize: effect.fontSize,
@@ -532,11 +481,6 @@ export class YugiohCard extends Card {
   }
 
   drawDescription() {
-    if (!this.descriptionLeaf) {
-      this.descriptionLeaf = new CompressText();
-      this.leafer.add(this.descriptionLeaf);
-    }
-
     const { effect, description } = this.style;
 
     let effectHeight = effect.minHeight || 0;
@@ -560,7 +504,7 @@ export class YugiohCard extends Card {
       }
     }
 
-    this.descriptionLeaf.set({
+    this.leaf('descriptionLeaf', CompressText).set({
       text: this.data.description,
       fontFamily,
       fontSize: description.fontSize,
@@ -585,25 +529,17 @@ export class YugiohCard extends Card {
   }
 
   drawAtkDefLink() {
-    if (!this.atkDefLinkLeaf) {
-      this.atkDefLinkLeaf = new Group();
-      const atkDefLinkImage = new Image();
-      const atk = new Text();
-      const def = new Text();
-      const link = new Text();
+    const atkDefLinkLeaf = this.leaf('atkDefLinkLeaf', Group, group => {
+      group.add(new Image());
+      group.add(new Text());
+      group.add(new Text());
+      group.add(new Text());
+    });
 
-      this.atkDefLinkLeaf.add(atkDefLinkImage);
-      this.atkDefLinkLeaf.add(atk);
-      this.atkDefLinkLeaf.add(def);
-      this.atkDefLinkLeaf.add(link);
-
-      this.leafer.add(this.atkDefLinkLeaf);
-    }
-
-    const atkDefLinkImage = this.atkDefLinkLeaf.children[0];
-    const atk = this.atkDefLinkLeaf.children[1];
-    const def = this.atkDefLinkLeaf.children[2];
-    const link = this.atkDefLinkLeaf.children[3];
+    const atkDefLinkImage = atkDefLinkLeaf.children[0];
+    const atk = atkDefLinkLeaf.children[1];
+    const def = atkDefLinkLeaf.children[2];
+    const link = atkDefLinkLeaf.children[3];
     atkDefLinkImage.set({
       url: this.atkDefLinkUrl,
       x: 109,
@@ -668,19 +604,14 @@ export class YugiohCard extends Card {
       visible: this.data.type === 'monster' && this.data.cardType === 'link',
     });
 
-    this.atkDefLinkLeaf.set({
+    atkDefLinkLeaf.set({
       visible: this.showAtkDefLink,
       zIndex: 30,
     });
   }
 
   drawPassword() {
-    if (!this.passwordLeaf) {
-      this.passwordLeaf = new CompressText();
-      this.leafer.add(this.passwordLeaf);
-    }
-
-    this.passwordLeaf.set({
+    this.leaf('passwordLeaf', CompressText).set({
       text: this.data.password,
       fontFamily: this.passwordFontFamily,
       fontSize: 40,
@@ -692,14 +623,9 @@ export class YugiohCard extends Card {
   }
 
   drawCopyright() {
-    if (!this.copyrightLeaf) {
-      this.copyrightLeaf = new Image();
-      this.leafer.add(this.copyrightLeaf);
-    }
-
     const color = this.data.type === 'monster' && this.data.cardType === 'xyz' ? 'white' : 'black';
     const copyrightUrl = this.data.copyright ? `${this.baseImage}/copyright-${this.data.copyright}-${color}.svg` : '';
-    this.copyrightLeaf.set({
+    this.leaf('copyrightLeaf', Image).set({
       url: copyrightUrl,
       x: this.cardWidth - 141,
       y: 1936,
@@ -710,13 +636,8 @@ export class YugiohCard extends Card {
   }
 
   drawLaser() {
-    if (!this.laserLeaf) {
-      this.laserLeaf = new Image();
-      this.leafer.add(this.laserLeaf);
-    }
-
     const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
-    this.laserLeaf.set({
+    this.leaf('laserLeaf', Image).set({
       url: laserUrl,
       x: this.cardWidth - 119,
       y: this.cardHeight - 120,
@@ -727,17 +648,12 @@ export class YugiohCard extends Card {
   }
 
   drawRare() {
-    if (!this.rareLeaf) {
-      this.rareLeaf = new Image();
-      this.leafer.add(this.rareLeaf);
-    }
-
     const suffix = this.data.type === 'pendulum' ? '-pendulum' : '';
     const supportedRare = ['dt', 'ur', 'gr', 'hr', 'ser', 'gser', 'pser'];
     const rareUrl = this.data.rare && supportedRare.includes(this.data.rare)
       ? `${this.baseImage}/rare-${this.data.rare}${suffix}.png` : '';
 
-    this.rareLeaf.set({
+    this.leaf('rareLeaf', Image).set({
       url: rareUrl,
       cornerRadius: this.data.radius ? 24 : 0,
       visible: !!rareUrl,
@@ -746,14 +662,8 @@ export class YugiohCard extends Card {
   }
 
   drawAttributeRare() {
-    if (!this.attributeRareLeaf) {
-      this.attributeRareLeaf = new Image();
-      this.leafer.add(this.attributeRareLeaf);
-    }
-
-    const attributeRareUrl = `${this.baseImage}/attribute-rare.png`;
-    this.attributeRareLeaf.set({
-      url: attributeRareUrl,
+    this.leaf('attributeRareLeaf', Image).set({
+      url: `${this.baseImage}/attribute-rare.png`,
       x: 1163,
       y: 96,
       visible: this.showAttributeRare,
@@ -762,17 +672,13 @@ export class YugiohCard extends Card {
   }
 
   drawTwentieth() {
-    if (!this.twentiethLeaf) {
-      this.twentiethLeaf = new Image();
-      this.leafer.add(this.twentiethLeaf);
-    }
-
-    const twentiethUrl = `${this.baseImage}/twentieth.png`;
-    this.twentiethLeaf.set({
-      url: twentiethUrl,
-      x: 472,
-      y: 1532,
-      visible: this.data.twentieth,
+    const asset = TWENTIETH_ASSET_MAP[this.data.twentieth] ?? '';
+    this.leaf('twentiethLeaf', Image).set({
+      url: asset ? `${this.baseImage}/${asset}.png` : '',
+      x: this.cardWidth / 2 + TWENTIETH_POSITION.offsetX,
+      y: this.cardHeight - TWENTIETH_POSITION.offsetY,
+      around: TWENTIETH_POSITION.around,
+      visible: !!asset,
       zIndex: 10,
     });
   }
@@ -838,6 +744,18 @@ export class YugiohCard extends Card {
       return applyCustomFonts(style, cf);
     }
     return style;
+  }
+
+  // 本次渲染需要的字体族：样式树 + 代码中直接引用、不在样式树内的字体
+  get fontFamilies() {
+    return [...new Set([
+      ...collectFontFamilies(this.style),
+      'ygo-tip', // 注音等辅助文本
+      'ygo-en-italic', // 英文通常怪兽描述斜体
+      this.atkDefFontFamily,
+      this.linkFontFamily,
+      this.passwordFontFamily,
+    ])];
   }
 
   // 数值字体（ATK/DEF/LINK/灵摆刻度/卡密/包号）：仅在「自定义字体」模式下用用户导入的数值字体
@@ -907,13 +825,8 @@ export class YugiohCard extends Card {
 
   get spellTrapName() {
     let name = '';
-    if (this.data.language === 'sc') {
-      if (this.data.type === 'spell') {
-        name = '魔法卡';
-      } else if (this.data.type === 'trap') {
-        name = '陷阱卡';
-      }
-    } else if (this.data.language === 'tc') {
+    // 简中与繁中在此处用字相同，合并处理
+    if (['sc', 'tc'].includes(this.data.language)) {
       if (this.data.type === 'spell') {
         name = '魔法卡';
       } else if (this.data.type === 'trap') {
@@ -976,43 +889,18 @@ export class YugiohCard extends Card {
   }
 
   get showAtkDefLink() {
-    if (!this.data.atkBar) {
-      return false;
-    } else if (this.data.language === 'astral') {
-      if ((this.data.type === 'monster' && this.data.cardType !== 'link') || this.data.type === 'pendulum') {
-        return true;
-      }
-      if (this.data.type === 'monster' && this.data.cardType === 'link') {
-        return true;
-      }
-    } else {
-      if ((this.data.type === 'monster' && this.data.cardType !== 'link') || this.data.type === 'pendulum') {
-        return true;
-      }
-      if (this.data.type === 'monster' && this.data.cardType === 'link') {
-        return true;
-      }
-    }
-    return false;
+    // monster 的 link / 非 link 两种情况已经覆盖全部 monster，等价于「怪兽或灵摆」
+    return !!this.data.atkBar && ['monster', 'pendulum'].includes(this.data.type);
   }
 
   get atkDefLinkUrl() {
-    let url = '';
-    if (this.data.language === 'astral') {
-      if ((this.data.type === 'monster' && this.data.cardType !== 'link') || this.data.type === 'pendulum') {
-        url = `${this.baseImage}/atk-def-astral.svg`;
-      }
-      if (this.data.type === 'monster' && this.data.cardType === 'link') {
-        url = `${this.baseImage}/atk-link-astral.svg`;
-      }
-    } else {
-      if ((this.data.type === 'monster' && this.data.cardType !== 'link') || this.data.type === 'pendulum') {
-        url = `${this.baseImage}/atk-def.svg`;
-      }
-      if (this.data.type === 'monster' && this.data.cardType === 'link') {
-        url = `${this.baseImage}/atk-link.svg`;
-      }
+    const suffix = this.data.language === 'astral' ? '-astral' : '';
+    if (this.data.type === 'monster' && this.data.cardType === 'link') {
+      return `${this.baseImage}/atk-link${suffix}.svg`;
     }
-    return url;
+    if (['monster', 'pendulum'].includes(this.data.type)) {
+      return `${this.baseImage}/atk-def${suffix}.svg`;
+    }
+    return '';
   }
 }

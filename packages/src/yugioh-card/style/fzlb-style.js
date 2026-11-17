@@ -1,37 +1,8 @@
-import { inheritProp } from '../../utils/index.js';
+import { deriveStyle } from '../../utils/style.js';
+import scStyle from './sc-style.js';
 
-// 方正隶变简体 - 简中隶书变体
-export default inheritProp({
+// 方正隶变简体：排版参数与 sc-style 一致，但不启用小字回退
+export default deriveStyle(scStyle, {
   fontFamily: 'ygo-fzlb',
-  name: {
-    top: 97,
-    fontSize: 108,
-  },
-  spellTrap: {
-    top: 254,
-    fontSize: 76,
-    right: 134,
-    letterSpacing: 2,
-    icon: {
-      marginTop: 8,
-      marginLeft: 10,
-    },
-  },
-  pendulumDescription: {
-    top: 1282,
-    fontSize: 36,
-    letterSpacing: 2,
-    lineHeight: 1.2,
-  },
-  effect: {
-    top: 1528,
-    fontSize: 44,
-    letterSpacing: 2,
-    lineHeight: 1.2,
-  },
-  description: {
-    fontSize: 36,
-    letterSpacing: 2,
-    lineHeight: 1.2,
-  },
+  dropDescription: ['smallFontSize'],
 });

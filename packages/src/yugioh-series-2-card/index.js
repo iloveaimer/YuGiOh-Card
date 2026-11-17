@@ -1,6 +1,7 @@
 import { Group, Image, Rect } from 'leafer-unified';
 import { Card } from '../card/index.js';
 import { CompressText } from '../compress-text/index.js';
+import { collectFontFamilies, mergeFontStyle } from '../utils/index.js';
 import jpStyle from './style/jp-style.js';
 import custom1Style from './style/custom1-style.js';
 import custom2Style from './style/custom2-style.js';
@@ -14,6 +15,30 @@ import hktfw5Style from '../yugioh-card/style/hktfw5-style.js';
 import dfgls4Style from '../yugioh-card/style/dfgls4-style.js';
 import dfgls5Style from '../yugioh-card/style/dfgls5-style.js';
 import rodinStyle from '../yugioh-card/style/rodin-style.js';
+
+// 系列2 自带的字体样式：坐标已按系列2 模板调好，直接使用
+const NATIVE_STYLE_MAP = {
+  custom1: custom1Style,
+  custom2: custom2Style,
+};
+
+// 来自经典卡的字体样式：经典卡把坐标与字体混写在一起（两模板的 name.top 差 39px、
+// effect.top 差 157px），因此只取其中的字体属性，坐标与字号仍用系列2 的基准（jpStyle）。
+// 在模块加载时算好，避免每次取 style 都重建。键需与 UI 字体下拉选项保持一致。
+const LEGACY_FONT_STYLE_MAP = Object.fromEntries(
+  Object.entries({
+    hklsw7: hklsw7Style,
+    hklsw5: hklsw5Style,
+    xlsj: lsStyle,
+    xlsf: lsfStyle,
+    kt: ktStyle,
+    fzlb: fzlbStyle,
+    hktfw5: hktfw5Style,
+    dfgls4: dfgls4Style,
+    dfgls5: dfgls5Style,
+    rodin: rodinStyle,
+  }).map(([font, style]) => [font, mergeFontStyle(jpStyle, style)]),
+);
 
 export class YugiohSeries2Card extends Card {
   cardLeaf = null;
@@ -76,27 +101,16 @@ export class YugiohSeries2Card extends Card {
   }
 
   draw() {
-    const steps = [
+    this.runDrawSteps([
       'drawCard', 'drawName', 'drawAttribute', 'drawLevel',
       'drawSpellTrap', 'drawImage', 'drawMask', 'drawPackage',
       'drawEffect', 'drawDescription', 'drawAtkDef', 'drawPassword',
       'drawCopyright', 'drawLaser', 'updateScale',
-    ];
-    for (const step of steps) {
-      try {
-        this[step]();
-      } catch (e) {
-        console.error(`[YugiohSeries2Card] ${step}() 渲染失败:`, e);
-      }
-    }
+    ]);
   }
 
   drawCard() {
-    if (!this.cardLeaf) {
-      this.cardLeaf = new Image();
-      this.leafer.add(this.cardLeaf);
-    }
-    this.cardLeaf.set({
+    this.leaf('cardLeaf', Image).set({
       url: this.cardUrl,
       cornerRadius: this.data.radius ? 24 : 0,
       zIndex: 0,
@@ -106,11 +120,7 @@ export class YugiohSeries2Card extends Card {
   drawName() {
     const { name } = this.style;
 
-    if (!this.nameLeaf) {
-      this.nameLeaf = new CompressText();
-      this.leafer.add(this.nameLeaf);
-    }
-    this.nameLeaf.set({
+    this.leaf('nameLeaf', CompressText).set({
       text: this.data.name,
       fontFamily: name.fontFamily,
       fontSize: name.fontSize,
@@ -132,11 +142,7 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawAttribute() {
-    if (!this.attributeLeaf) {
-      this.attributeLeaf = new Image();
-      this.leafer.add(this.attributeLeaf);
-    }
-    this.attributeLeaf.set({
+    this.leaf('attributeLeaf', Image).set({
       url: this.attributeUrl,
       x: 1119,
       y: 128,
@@ -146,19 +152,16 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawLevel() {
-    if (!this.levelLeaf) {
-      this.levelLeaf = new Group();
+    const levelLeaf = this.leaf('levelLeaf', Group, group => {
       for (let i = 0; i < 12; i++) {
-        const level = new Image();
-        this.levelLeaf.add(level);
+        group.add(new Image());
       }
-      this.leafer.add(this.levelLeaf);
-    }
+    });
 
     const levelUrl = `${this.baseImage}/level.png`;
     const levelWidth = 92;
     const right = this.data.level < 12 ? 172 : 129;
-    this.levelLeaf.children.forEach((level, index) => {
+    levelLeaf.children.forEach((level, index) => {
       level.set({
         url: levelUrl,
         x: this.cardWidth - right - index * (levelWidth + 3),
@@ -168,26 +171,18 @@ export class YugiohSeries2Card extends Card {
       });
     });
 
-    this.levelLeaf.set({
+    levelLeaf.set({
       visible: this.data.type === 'monster',
       zIndex: 10,
     });
   }
 
   drawSpellTrap() {
-    if (!this.spellTrapLeaf) {
-      this.spellTrapLeaf = new Group();
-
-      const rightText = new CompressText();
-      const spellTrapIcon = new Image();
-      const leftText = new CompressText();
-
-      this.spellTrapLeaf.add(rightText);
-      this.spellTrapLeaf.add(spellTrapIcon);
-      this.spellTrapLeaf.add(leftText);
-
-      this.leafer.add(this.spellTrapLeaf);
-    }
+    this.leaf('spellTrapLeaf', Group, group => {
+      group.add(new CompressText());
+      group.add(new Image());
+      group.add(new CompressText());
+    });
 
     const { spellTrap } = this.style;
     const { icon } = spellTrap;
@@ -239,13 +234,7 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawImage() {
-    if (!this.imageLeaf) {
-      this.imageLeaf = new Rect();
-      this.listenImageStatus(this.imageLeaf);
-      this.leafer.add(this.imageLeaf);
-    }
-
-    this.imageLeaf.set({
+    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
       width: 990,
       height: 1100,
       x: 202,
@@ -262,14 +251,8 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawMask() {
-    if (!this.maskLeaf) {
-      this.maskLeaf = new Image();
-      this.leafer.add(this.maskLeaf);
-    }
-
-    const maskUrl = `${this.baseImage}/card-mask.png`;
-    this.maskLeaf.set({
-      url: maskUrl,
+    this.leaf('maskLeaf', Image).set({
+      url: `${this.baseImage}/card-mask.png`,
       x: 143,
       y: 414,
       zIndex: 20,
@@ -277,34 +260,25 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawPackage() {
-    if (!this.packageLeaf) {
-      this.packageLeaf = new CompressText();
-      this.leafer.add(this.packageLeaf);
-    }
-
-    this.packageLeaf.set({
+    const packageLeaf = this.leaf('packageLeaf', CompressText);
+    packageLeaf.set({
       text: this.data.package,
       fontFamily: 'ygo-tip',
       fontSize: 33,
       y: 1601,
       zIndex: 30,
     });
-    const bounds = this.packageLeaf.bounds;
-    this.packageLeaf.x = this.cardWidth - 170 - bounds.width;
+    const bounds = packageLeaf.bounds;
+    packageLeaf.x = this.cardWidth - 170 - bounds.width;
   }
 
   drawEffect() {
-    if (!this.effectLeaf) {
-      this.effectLeaf = new CompressText();
-      this.leafer.add(this.effectLeaf);
-    }
-
     const { effect } = this.style;
 
     const leftBracket = '【';
     const rightBracket = '】';
 
-    this.effectLeaf.set({
+    this.leaf('effectLeaf', CompressText).set({
       text: leftBracket + this.data.monsterType + rightBracket,
       fontFamily: effect.fontFamily,
       fontSize: effect.fontSize,
@@ -324,11 +298,6 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawDescription() {
-    if (!this.descriptionLeaf) {
-      this.descriptionLeaf = new CompressText();
-      this.leafer.add(this.descriptionLeaf);
-    }
-
     const { effect, description } = this.style;
 
     let effectHeight = effect.minHeight || 0;
@@ -336,7 +305,7 @@ export class YugiohSeries2Card extends Card {
       effectHeight = effect.fontSize * effect.lineHeight;
     }
 
-    this.descriptionLeaf.set({
+    this.leaf('descriptionLeaf', CompressText).set({
       text: this.data.description,
       fontFamily: description.fontFamily,
       fontSize: description.fontSize,
@@ -358,19 +327,13 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawAtkDef() {
-    if (!this.atkDefLeaf) {
-      this.atkDefLeaf = new Group();
-      const atk = new CompressText();
-      const def = new CompressText();
+    const atkDefLeaf = this.leaf('atkDefLeaf', Group, group => {
+      group.add(new CompressText());
+      group.add(new CompressText());
+    });
 
-      this.atkDefLeaf.add(atk);
-      this.atkDefLeaf.add(def);
-
-      this.leafer.add(this.atkDefLeaf);
-    }
-
-    const atk = this.atkDefLeaf.children[0];
-    const def = this.atkDefLeaf.children[1];
+    const atk = atkDefLeaf.children[0];
+    const def = atkDefLeaf.children[1];
 
     let atkText = '';
     if (this.data.atk >= 0) {
@@ -414,19 +377,14 @@ export class YugiohSeries2Card extends Card {
       y: 1795,
     });
 
-    this.atkDefLeaf.set({
+    atkDefLeaf.set({
       visible: this.data.type === 'monster',
       zIndex: 30,
     });
   }
 
   drawPassword() {
-    if (!this.passwordLeaf) {
-      this.passwordLeaf = new CompressText();
-      this.leafer.add(this.passwordLeaf);
-    }
-
-    this.passwordLeaf.set({
+    this.leaf('passwordLeaf', CompressText).set({
       text: this.data.password,
       fontFamily: 'ygo-tip',
       fontSize: 33,
@@ -437,13 +395,8 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawCopyright() {
-    if (!this.copyrightLeaf) {
-      this.copyrightLeaf = new Image();
-      this.leafer.add(this.copyrightLeaf);
-    }
-
     const copyrightUrl = this.data.copyright ? `${this.baseImage}/copyright-${this.data.copyright}-black.svg` : '';
-    this.copyrightLeaf.set({
+    this.leaf('copyrightLeaf', Image).set({
       url: copyrightUrl,
       x: this.cardWidth - 161,
       y: 1940,
@@ -454,13 +407,8 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawLaser() {
-    if (!this.laserLeaf) {
-      this.laserLeaf = new Image();
-      this.leafer.add(this.laserLeaf);
-    }
-
     const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
-    this.laserLeaf.set({
+    this.leaf('laserLeaf', Image).set({
       url: laserUrl,
       x: this.cardWidth - 118,
       y: this.cardHeight - 118,
@@ -474,40 +422,15 @@ export class YugiohSeries2Card extends Card {
     return `${this.resourcePath}/yugioh-series-2/image`;
   }
 
+  // 本次渲染需要的字体族：样式树 + 代码中直接引用的字体（攻守用 ygo-jp，辅助文本用 ygo-tip）
+  get fontFamilies() {
+    return [...new Set([...collectFontFamilies(this.style), 'ygo-jp', 'ygo-tip'])];
+  }
+
   get style() {
-    let style = {};
-    if (this.data.font) {
-      if (this.data.font === 'custom1') {
-        style = custom1Style;
-      } else if (this.data.font === 'custom2') {
-        style = custom2Style;
-      } else if (this.data.font === 'hklsw7') {
-        style = hklsw7Style;
-      } else if (this.data.font === 'hklsw5') {
-        style = hklsw5Style;
-      } else if (this.data.font === 'xlsj') {
-        style = lsStyle;
-      } else if (this.data.font === 'xlsf') {
-        style = lsfStyle;
-      } else if (this.data.font === 'kt') {
-        style = ktStyle;
-      } else if (this.data.font === 'fzlb') {
-        style = fzlbStyle;
-      } else if (this.data.font === 'hktfw5') {
-        style = hktfw5Style;
-      } else if (this.data.font === 'dfgls4') {
-        style = dfgls4Style;
-      } else if (this.data.font === 'dfgls5') {
-        style = dfgls5Style;
-      } else if (this.data.font === 'rodin') {
-        style = rodinStyle;
-      }
-    } else {
-      if (this.data.language === 'jp') {
-        style = jpStyle;
-      }
-    }
-    return style;
+    // 系列2 模板只提供日文样式（jp-style）。字体未登记、或未选字体但语言不是日文时一律回退，
+    // 否则返回空对象，drawName 等步骤读 style.name.fontFamily 会抛错，整张卡片只剩底图
+    return NATIVE_STYLE_MAP[this.data.font] || LEGACY_FONT_STYLE_MAP[this.data.font] || jpStyle;
   }
 
   get cardUrl() {

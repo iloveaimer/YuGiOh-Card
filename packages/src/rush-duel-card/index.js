@@ -1,6 +1,7 @@
 import { Group, Image, Rect, Text } from 'leafer-unified';
 import { Card } from '../card/index.js';
 import { CompressText } from '../compress-text/index.js';
+import { collectFontFamilies } from '../utils/index.js';
 import scStyle from './style/sc-style.js';
 import jpStyle from './style/jp-style.js';
 
@@ -63,27 +64,16 @@ export class RushDuelCard extends Card {
   }
 
   draw() {
-    const steps = [
+    this.runDrawSteps([
       'drawCard', 'drawName', 'drawAttribute', 'drawLevel',
       'drawSpellTrap', 'drawImage', 'drawMask', 'drawPackage',
       'drawEffect', 'drawDescription', 'drawMaximumAtk', 'drawAtkDef',
       'drawLegend', 'drawLaser', 'drawRare', 'updateScale',
-    ];
-    for (const step of steps) {
-      try {
-        this[step]();
-      } catch (e) {
-        console.error(`[RushDuelCard] ${step}() 渲染失败:`, e);
-      }
-    }
+    ]);
   }
 
   drawCard() {
-    if (!this.cardLeaf) {
-      this.cardLeaf = new Image();
-      this.leafer.add(this.cardLeaf);
-    }
-    this.cardLeaf.set({
+    this.leaf('cardLeaf', Image).set({
       url: this.cardUrl,
       cornerRadius: this.data.radius ? 24 : 0,
       zIndex: 0,
@@ -93,11 +83,7 @@ export class RushDuelCard extends Card {
   drawName() {
     const { name } = this.style;
 
-    if (!this.nameLeaf) {
-      this.nameLeaf = new CompressText();
-      this.leafer.add(this.nameLeaf);
-    }
-    this.nameLeaf.set({
+    this.leaf('nameLeaf', CompressText).set({
       text: this.data.name,
       fontFamily: name.fontFamily,
       fontSize: name.fontSize,
@@ -114,11 +100,7 @@ export class RushDuelCard extends Card {
   }
 
   drawAttribute() {
-    if (!this.attributeLeaf) {
-      this.attributeLeaf = new Image();
-      this.leafer.add(this.attributeLeaf);
-    }
-    this.attributeLeaf.set({
+    this.leaf('attributeLeaf', Image).set({
       url: this.attributeUrl,
       x: 1138,
       y: 68,
@@ -128,17 +110,13 @@ export class RushDuelCard extends Card {
   }
 
   drawLevel() {
-    if (!this.levelLeaf) {
-      this.levelLeaf = new Group();
-      const levelImage = new Image();
-      const levelText = new Text();
-      this.levelLeaf.add(levelImage);
-      this.levelLeaf.add(levelText);
-      this.leafer.add(this.levelLeaf);
-    }
+    const levelLeaf = this.leaf('levelLeaf', Group, group => {
+      group.add(new Image());
+      group.add(new Text());
+    });
 
-    const levelImage = this.levelLeaf.children[0];
-    const levelText = this.levelLeaf.children[1];
+    const levelImage = levelLeaf.children[0];
+    const levelText = levelLeaf.children[1];
 
     const levelUrl = `${this.baseImage}/level.png`;
     levelImage.set({
@@ -159,26 +137,18 @@ export class RushDuelCard extends Card {
       around: { type: 'percent', x: 0.5, y: 0 },
     });
 
-    this.levelLeaf.set({
+    levelLeaf.set({
       visible: this.data.type === 'monster',
       zIndex: 40,
     });
   }
 
   drawSpellTrap() {
-    if (!this.spellTrapLeaf) {
-      this.spellTrapLeaf = new Group();
-
-      const leftText = new CompressText();
-      const spellTrapIcon = new Image();
-      const rightText = new CompressText();
-
-      this.spellTrapLeaf.add(leftText);
-      this.spellTrapLeaf.add(spellTrapIcon);
-      this.spellTrapLeaf.add(rightText);
-
-      this.leafer.add(this.spellTrapLeaf);
-    }
+    const spellTrapLeaf = this.leaf('spellTrapLeaf', Group, group => {
+      group.add(new CompressText());
+      group.add(new Image());
+      group.add(new CompressText());
+    });
 
     const { spellTrap } = this.style;
     const { icon } = spellTrap;
@@ -189,9 +159,9 @@ export class RushDuelCard extends Card {
     const rightBracket = '】';
     const letterSpacing = spellTrap.letterSpacing || 0;
 
-    const leftText = this.spellTrapLeaf.children[0];
-    const spellTrapIcon = this.spellTrapLeaf.children[1];
-    const rightText = this.spellTrapLeaf.children[2];
+    const leftText = spellTrapLeaf.children[0];
+    const spellTrapIcon = spellTrapLeaf.children[1];
+    const rightText = spellTrapLeaf.children[2];
 
     leftText.set({
       text: leftBracket + this.spellTrapName,
@@ -222,20 +192,14 @@ export class RushDuelCard extends Card {
       y: spellTrap.top,
     });
 
-    this.spellTrapLeaf.set({
+    spellTrapLeaf.set({
       visible: ['spell', 'trap'].includes(this.data.type),
       zIndex: 10,
     });
   }
 
   drawImage() {
-    if (!this.imageLeaf) {
-      this.imageLeaf = new Rect();
-      this.listenImageStatus(this.imageLeaf);
-      this.leafer.add(this.imageLeaf);
-    }
-
-    this.imageLeaf.set({
+    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
       width: 1254,
       height: 1258,
       x: 70,
@@ -252,11 +216,7 @@ export class RushDuelCard extends Card {
   }
 
   drawMask() {
-    if (!this.maskLeaf) {
-      this.maskLeaf = new Image();
-      this.leafer.add(this.maskLeaf);
-    }
-    this.maskLeaf.set({
+    this.leaf('maskLeaf', Image).set({
       url: this.maskUrl,
       x: 70,
       y: 197,
@@ -265,12 +225,8 @@ export class RushDuelCard extends Card {
   }
 
   drawPackage() {
-    if (!this.packageLeaf) {
-      this.packageLeaf = new CompressText();
-      this.leafer.add(this.packageLeaf);
-    }
-
-    this.packageLeaf.set({
+    const packageLeaf = this.leaf('packageLeaf', CompressText);
+    packageLeaf.set({
       text: this.data.package,
       fontFamily: 'rd-tip',
       fontSize: 33,
@@ -280,22 +236,17 @@ export class RushDuelCard extends Card {
       y: 1914,
       zIndex: 30,
     });
-    const bounds = this.packageLeaf.bounds;
-    this.packageLeaf.x = this.cardWidth - 130 - bounds.width;
+    const bounds = packageLeaf.bounds;
+    packageLeaf.x = this.cardWidth - 130 - bounds.width;
   }
 
   drawEffect() {
-    if (!this.effectLeaf) {
-      this.effectLeaf = new CompressText();
-      this.leafer.add(this.effectLeaf);
-    }
-
     const { effect } = this.style;
 
     const leftBracket = '【';
     const rightBracket = '】';
 
-    this.effectLeaf.set({
+    this.leaf('effectLeaf', CompressText).set({
       text: leftBracket + this.data.monsterType + rightBracket,
       fontFamily: effect.fontFamily,
       fontSize: effect.fontSize,
@@ -315,14 +266,9 @@ export class RushDuelCard extends Card {
   }
 
   drawDescription() {
-    if (!this.descriptionLeaf) {
-      this.descriptionLeaf = new CompressText();
-      this.leafer.add(this.descriptionLeaf);
-    }
-
     const { description } = this.style;
 
-    this.descriptionLeaf.set({
+    this.leaf('descriptionLeaf', CompressText).set({
       text: this.data.description,
       fontFamily: description.fontFamily,
       fontSize: description.fontSize,
@@ -344,17 +290,13 @@ export class RushDuelCard extends Card {
   }
 
   drawMaximumAtk() {
-    if (!this.maximumAtkLeaf) {
-      this.maximumAtkLeaf = new Group();
-      const maximumAtkImage = new Image();
-      const maximumAtkText = new Text();
-      this.maximumAtkLeaf.add(maximumAtkImage);
-      this.maximumAtkLeaf.add(maximumAtkText);
-      this.leafer.add(this.maximumAtkLeaf);
-    }
+    const maximumAtkLeaf = this.leaf('maximumAtkLeaf', Group, group => {
+      group.add(new Image());
+      group.add(new Text());
+    });
 
-    const maximumAtkImage = this.maximumAtkLeaf.children[0];
-    const maximumAtkText = this.maximumAtkLeaf.children[1];
+    const maximumAtkImage = maximumAtkLeaf.children[0];
+    const maximumAtkText = maximumAtkLeaf.children[1];
 
     const maximumAtkUrl = `${this.baseImage}/maximum-atk.png`;
     maximumAtkImage.set({
@@ -376,29 +318,22 @@ export class RushDuelCard extends Card {
       around: { type: 'percent', x: 1, y: 0 },
     });
 
-    this.maximumAtkLeaf.set({
+    maximumAtkLeaf.set({
       visible: this.data.type === 'monster' && this.data.maximumAtk,
       zIndex: 30,
     });
   }
 
   drawAtkDef() {
-    if (!this.atkDefLeaf) {
-      this.atkDefLeaf = new Group();
-      const atkDefImage = new Image();
-      const atkText = new Text();
-      const defText = new Text();
+    const atkDefLeaf = this.leaf('atkDefLeaf', Group, group => {
+      group.add(new Image());
+      group.add(new Text());
+      group.add(new Text());
+    });
 
-      this.atkDefLeaf.add(atkDefImage);
-      this.atkDefLeaf.add(atkText);
-      this.atkDefLeaf.add(defText);
-
-      this.leafer.add(this.atkDefLeaf);
-    }
-
-    const atkDefImage = this.atkDefLeaf.children[0];
-    const atkText = this.atkDefLeaf.children[1];
-    const defText = this.atkDefLeaf.children[2];
+    const atkDefImage = atkDefLeaf.children[0];
+    const atkText = atkDefLeaf.children[1];
+    const defText = atkDefLeaf.children[2];
 
     const atkDefUrl = `${this.baseImage}/atk-def.png`;
     atkDefImage.set({
@@ -433,20 +368,15 @@ export class RushDuelCard extends Card {
       around: { type: 'percent', x: 1, y: 0 },
     });
 
-    this.atkDefLeaf.set({
+    atkDefLeaf.set({
       visible: this.data.type === 'monster',
       zIndex: 30,
     });
   }
 
   drawLegend() {
-    if (!this.legendLeaf) {
-      this.legendLeaf = new Image();
-      this.leafer.add(this.legendLeaf);
-    }
-
     const legendUrl = this.data.legend ? `${this.baseImage}/legend.png` : '';
-    this.legendLeaf.set({
+    this.leaf('legendLeaf', Image).set({
       url: legendUrl,
       x: 84,
       y: 210,
@@ -456,13 +386,8 @@ export class RushDuelCard extends Card {
   }
 
   drawLaser() {
-    if (!this.laserLeaf) {
-      this.laserLeaf = new Image();
-      this.leafer.add(this.laserLeaf);
-    }
-
     const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
-    this.laserLeaf.set({
+    this.leaf('laserLeaf', Image).set({
       url: laserUrl,
       x: 1276,
       y: 1913,
@@ -472,14 +397,8 @@ export class RushDuelCard extends Card {
   }
 
   drawRare() {
-    if (!this.rareLeaf) {
-      this.rareLeaf = new Image();
-      this.leafer.add(this.rareLeaf);
-    }
-
     const rareUrl = this.data.rare ? `${this.baseImage}/rare-${this.data.rare}.png` : '';
-
-    this.rareLeaf.set({
+    this.leaf('rareLeaf', Image).set({
       url: rareUrl,
       cornerRadius: this.data.radius ? 24 : 0,
       visible: this.data.rare,
@@ -499,6 +418,11 @@ export class RushDuelCard extends Card {
       style = jpStyle;
     }
     return style;
+  }
+
+  // 本次渲染需要的字体族：样式树 + 代码中直接引用的字体（攻守/星级用 rd-atk-def，辅助文本用 rd-tip）
+  get fontFamilies() {
+    return [...new Set([...collectFontFamilies(this.style), 'rd-atk-def', 'rd-tip'])];
   }
 
   get cardUrl() {
