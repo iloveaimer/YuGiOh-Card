@@ -109,14 +109,6 @@ export class YugiohSeries2Card extends Card {
     ]);
   }
 
-  drawCard() {
-    this.leaf('cardLeaf', Image).set({
-      url: this.cardUrl,
-      cornerRadius: this.data.radius ? 24 : 0,
-      zIndex: 0,
-    });
-  }
-
   drawName() {
     const { name } = this.style;
 
@@ -234,20 +226,7 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawImage() {
-    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
-      width: 990,
-      height: 1100,
-      x: 202,
-      y: 468,
-      fill: {
-        type: 'image',
-        url: this.data.image,
-        mode: 'cover',
-        align: 'top',
-      },
-      visible: this.data.image,
-      zIndex: 10,
-    });
+    super.drawImage({ width: 990, height: 1100, x: 202, y: 468, visible: this.data.image });
   }
 
   drawMask() {
@@ -407,7 +386,7 @@ export class YugiohSeries2Card extends Card {
   }
 
   drawLaser() {
-    const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
+    const laserUrl = this.laserUrl;
     this.leaf('laserLeaf', Image).set({
       url: laserUrl,
       x: this.cardWidth - 118,

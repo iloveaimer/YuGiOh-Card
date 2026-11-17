@@ -33,14 +33,6 @@ export class YugiohBackCard extends Card {
     this.runDrawSteps(['drawCard', 'drawKonami', 'drawRegister', 'drawLogo', 'updateScale']);
   }
 
-  drawCard() {
-    this.leaf('cardLeaf', Image).set({
-      url: `${this.baseImage}/card-${this.data.type}.png`,
-      cornerRadius: this.data.radius ? 24 : 0,
-      zIndex: 0,
-    });
-  }
-
   drawKonami() {
     this.leaf('konamiLeaf', Image).set({
       url: `${this.baseImage}/konami.png`,
@@ -85,5 +77,9 @@ export class YugiohBackCard extends Card {
 
   get baseImage() {
     return `${this.resourcePath}/yugioh-back/image`;
+  }
+
+  get cardUrl() {
+    return `${this.baseImage}/card-${this.data.type}.png`;
   }
 }

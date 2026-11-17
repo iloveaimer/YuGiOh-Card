@@ -1,4 +1,4 @@
-import { Text, Image, ImageEvent, Leafer, useCanvas } from 'leafer-unified';
+import { Text, Image, ImageEvent, Leafer, Rect, useCanvas } from 'leafer-unified';
 import { collectFontFamilies, isBrowser, isNode, loadFontBrowser, loadFontNode } from '../utils/index.js';
 import loaderIconUrl from '../svg/loader.js';
 import imageIconUrl from '../svg/image.js';
@@ -119,6 +119,31 @@ export class Card {
     // need to be overridden
   }
 
+  // 卡框底图：各卡类的差异只在 cardUrl 与是否监听图片状态。
+  cardLeafOnCreate() {}
+
+  // 中间卡图：四类的差异只在尺寸坐标和可见性，填充与状态监听完全一致。
+  drawImage(rect) {
+    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
+      ...rect,
+      fill: {
+        type: 'image',
+        url: this.data.image,
+        mode: 'cover',
+        align: 'top',
+      },
+      zIndex: 10,
+    });
+  }
+
+  drawCard() {
+    this.leaf('cardLeaf', Image, leaf => this.cardLeafOnCreate(leaf)).set({
+      url: this.cardUrl,
+      cornerRadius: this.data.radius ? 24 : 0,
+      zIndex: 0,
+    });
+  }
+
   // 依次执行绘制步骤；单步失败不影响后续步骤，避免一处异常导致整张卡片空白
   runDrawSteps(steps) {
     for (const step of steps) {
@@ -181,6 +206,10 @@ export class Card {
       visible: [ImageEvent.LOAD, ImageEvent.ERROR].includes(status) && !!imageUrl,
       zIndex: zIndex + 1,
     });
+  }
+
+  get laserUrl() {
+    return this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
   }
 
   updateScale() {

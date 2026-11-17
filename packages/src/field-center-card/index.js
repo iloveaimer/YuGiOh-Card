@@ -30,28 +30,13 @@ export class FieldCenterCard extends Card {
     this.runDrawSteps(['drawCard', 'drawImage', 'drawMask', 'updateScale']);
   }
 
-  drawCard() {
-    this.leaf('cardLeaf', Image).set({
-      url: this.cardUrl,
-      cornerRadius: this.data.radius ? 24 : 0,
-      zIndex: 0,
-    });
-  }
-
   drawImage() {
-    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
+    super.drawImage({
       width: 1308,
       height: 1907,
       x: 90,
       y: 85,
-      fill: {
-        type: 'image',
-        url: this.data.image,
-        mode: 'cover',
-        align: 'top',
-      },
       visible: this.data.image && !this.data.cardBack,
-      zIndex: 10,
     });
   }
 

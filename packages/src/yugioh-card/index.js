@@ -143,12 +143,8 @@ export class YugiohCard extends Card {
     ]);
   }
 
-  drawCard() {
-    this.leaf('cardLeaf', Image, leaf => this.listenImageStatus(leaf)).set({
-      url: this.cardUrl,
-      cornerRadius: this.data.radius ? 24 : 0,
-      zIndex: 0,
-    });
+  cardLeafOnCreate(leaf) {
+    this.listenImageStatus(leaf);
   }
 
   drawName() {
@@ -301,19 +297,13 @@ export class YugiohCard extends Card {
   }
 
   drawImage() {
-    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
-      width: this.data.type === 'pendulum' ? 1205 : 1054,
-      height: this.data.type === 'pendulum' ? 1205 : 1054,
-      x: this.data.type === 'pendulum' ? 94 : 170,
-      y: this.data.type === 'pendulum' ? 364 : 375,
-      fill: {
-        type: 'image',
-        url: this.data.image,
-        mode: 'cover',
-        align: 'top',
-      },
+    const pendulum = this.data.type === 'pendulum';
+    super.drawImage({
+      width: pendulum ? 1205 : 1054,
+      height: pendulum ? 1205 : 1054,
+      x: pendulum ? 94 : 170,
+      y: pendulum ? 364 : 375,
       visible: this.data.image,
-      zIndex: 10,
     });
   }
 
@@ -636,7 +626,7 @@ export class YugiohCard extends Card {
   }
 
   drawLaser() {
-    const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
+    const laserUrl = this.laserUrl;
     this.leaf('laserLeaf', Image).set({
       url: laserUrl,
       x: this.cardWidth - 119,

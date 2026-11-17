@@ -72,14 +72,6 @@ export class RushDuelCard extends Card {
     ]);
   }
 
-  drawCard() {
-    this.leaf('cardLeaf', Image).set({
-      url: this.cardUrl,
-      cornerRadius: this.data.radius ? 24 : 0,
-      zIndex: 0,
-    });
-  }
-
   drawName() {
     const { name } = this.style;
 
@@ -199,20 +191,7 @@ export class RushDuelCard extends Card {
   }
 
   drawImage() {
-    this.leaf('imageLeaf', Rect, leaf => this.listenImageStatus(leaf)).set({
-      width: 1254,
-      height: 1258,
-      x: 70,
-      y: 200,
-      fill: {
-        type: 'image',
-        url: this.data.image,
-        mode: 'cover',
-        align: 'top',
-      },
-      visible: this.data.image,
-      zIndex: 10,
-    });
+    super.drawImage({ width: 1254, height: 1258, x: 70, y: 200, visible: this.data.image });
   }
 
   drawMask() {
@@ -386,7 +365,7 @@ export class RushDuelCard extends Card {
   }
 
   drawLaser() {
-    const laserUrl = this.data.laser ? `${this.baseImage}/${this.data.laser}.png` : '';
+    const laserUrl = this.laserUrl;
     this.leaf('laserLeaf', Image).set({
       url: laserUrl,
       x: 1276,
