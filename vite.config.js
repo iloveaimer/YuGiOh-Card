@@ -33,12 +33,27 @@ const buildLib = {
   },
 };
 
+// website 与 electron 按依赖来源分组，便于浏览器并行下载与长期缓存。
+const splitChunks = {
+  output: {
+    manualChunks(id) {
+      if (id.includes('element-plus')) return 'element-plus';
+      if (id.includes('/vue/') || id.includes('@vue/')) return 'vue';
+      if (id.includes('leafer') || id.includes('css-line-break')) return 'renderer';
+      if (id.includes('/packages/')) return 'card-lib';
+      return undefined;
+    },
+  },
+};
+
 const buildWebsite = {
   outDir: 'docs',
+  rollupOptions: splitChunks,
 };
 
 const buildElectron = {
   outDir: 'dist',
+  rollupOptions: splitChunks,
 };
 
 const buildConfigMap = {

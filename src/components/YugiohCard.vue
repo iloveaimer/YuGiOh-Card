@@ -39,6 +39,10 @@
           <el-tooltip :content="t('exportTip')" placement="bottom">
             <el-button size="small" :icon="Download" @click="exportData">{{ t('export') }}</el-button>
           </el-tooltip>
+          <el-tooltip :content="t('batchExportTip')" placement="bottom">
+            <el-button size="small" :icon="Files" :loading="batchLoading" @click="batchExport">{{ t('batchExport') }}</el-button>
+          </el-tooltip>
+          <input ref="batchInput" type="file" accept="application/json" multiple hidden @change="onBatchFiles" />
           <el-tooltip :content="t('resetTip')" placement="bottom">
             <el-button size="small" :icon="RefreshLeft" @click="resetCard">{{ t('reset') }}</el-button>
           </el-tooltip>
@@ -143,7 +147,12 @@
             :key="opt.value"
             class="card-type-item"
             :class="{ active: form.card === opt.value }"
+            role="button"
+            tabindex="0"
+            :aria-pressed="form.card === opt.value"
             @click="changeCard(opt.value)"
+            @keydown.enter.prevent="changeCard(opt.value)"
+            @keydown.space.prevent="changeCard(opt.value)"
           >
             {{ opt.label }}
           </div>
@@ -508,7 +517,13 @@
                     'arrow-cell--center': cell.center,
                   }"
                   :style="cell.center ? { visibility: 'hidden' } : {}"
+                  :role="cell.value ? 'button' : undefined"
+                  :tabindex="cell.value ? 0 : -1"
+                  :aria-pressed="cell.value ? formData.arrowList.includes(cell.value) : undefined"
+                  :aria-label="cell.value ? `${t('linkMarker')} ${cell.value}` : undefined"
                   @click="cell.value ? toggleArrow(cell.value) : undefined"
+                  @keydown.enter.prevent="cell.value ? toggleArrow(cell.value) : undefined"
+                  @keydown.space.prevent="cell.value ? toggleArrow(cell.value) : undefined"
                 >
                   <svg
                     v-if="cell.icon"
@@ -571,7 +586,8 @@
                   :min="0.5"
                   :max="1.5"
                   :step="0.02"
-                  @input="updateCard"
+                  @input="onSliderInput"
+                  @change="updateCard"
                 />
                 <span class="slider-val">{{ formData.descriptionZoom.toFixed(2) }}</span>
               </div>
@@ -584,7 +600,8 @@
                   :min="0"
                   :max="1"
                   :step="0.1"
-                  @input="scheduleUpdate()"
+                  @input="onSliderInput"
+                  @change="updateCard"
                 />
                 <span class="slider-val">{{ formData.descriptionWeight }}</span>
               </div>
@@ -731,8 +748,8 @@
                 style="width: 100%"
                 @change="updateCard"
               >
+                <!-- 25周年需先放入 twentyfive.png，缺素材时选中不显示任何图案 -->
                 <el-option :label="t('twentieth20')" value="twentieth" />
-                <el-option :label="t('twentieth25')" value="twentyfive" />
               </el-select>
             </div>
 
@@ -801,9 +818,10 @@
             </div>
 
             <!-- JSON 编辑器 -->
-            <details class="json-section">
+            <details class="json-section" @toggle="jsonEditorOpen = $event.target.open">
               <summary>{{ t('advanced') }}</summary>
               <json-editor-vue
+                v-if="jsonEditorOpen"
                 v-model="jsonData"
                 style="width: 100%; height: 300px"
                 mode="text"
@@ -826,6 +844,7 @@ import {
   Close,
   Coin,
   Download,
+  Files,
   Link,
   PictureFilled,
   Reading,
@@ -835,10 +854,9 @@ import {
   ZoomIn,
   ZoomOut,
 } from '@element-plus/icons-vue';
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, toRaw, watch } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref, shallowRef, toRaw, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { FieldCenterCard, RushDuelCard, YugiohBackCard, YugiohCard, YugiohSeries2Card } from 'yugioh-card';
-import JsonEditorVue from 'json-editor-vue';
 import { t, setLocale, useUiLocale } from '@/i18n';
 import { version } from '../../package.json';
 import fieldCenterDemo from '@/assets/demo/field-center-demo';
@@ -853,6 +871,24 @@ import {
   restoreCustomFont,
   removeCustomFont,
 } from '@/utils/customFont';
+import { isForeignCard, normalizeForeignCard } from '@/utils/card-format';
+import { clampExportRatio } from '@/utils/export-size';
+import { fetchJsonWithTimeout } from '@/utils/fetch-json';
+import { hasRuby, toRubyText } from '@/utils/ruby';
+import {
+  ATTR_KEY,
+  YGOPRODECK_ATTR,
+  YGOPRODECK_FRAME,
+  YGOPRODECK_ICON,
+  YGOPRODECK_MARKERS,
+  getRaceName,
+  getTypeLabels,
+  parseOcgType,
+  toPendulumType,
+} from '@/utils/ocgData';
+
+const JsonEditorVue = defineAsyncComponent(() => import('json-editor-vue'));
+const jsonEditorOpen = ref(false);
 
 const card = ref(null);
 const cardLeaf = shallowRef(null);
@@ -892,7 +928,7 @@ const attributeOptions = computed(() => [
   { label: t('attrDivine'), value: 'divine' },
 ]);
 
-const formData = reactive({ ...yugiohDemo, scale: 0.5, twentieth: yugiohDemo.twentieth || '', exportScale: yugiohDemo.exportScale || 1, watermark: yugiohDemo.watermark || '' });
+const formData = reactive({ ...yugiohDemo, scale: 0.5, twentieth: yugiohDemo.twentieth || '' });
 const jsonData = ref('');
 const jsonOption = reactive({
   mainMenuBar: false,
@@ -995,6 +1031,17 @@ const showTwentieth = computed(() => isYugioh.value);
 
 const imageUrl = ref('');
 const searchLoading = ref(false);
+// 回包代次：只有最新一次搜索允许写入卡片数据；加载态按并发数计数，由最后一个完成者关闭。
+let cardLoadToken = 0;
+let searchLoadingCount = 0;
+const startSearchLoading = () => {
+  searchLoadingCount += 1;
+  searchLoading.value = true;
+};
+const stopSearchLoading = () => {
+  searchLoadingCount = Math.max(0, searchLoadingCount - 1);
+  searchLoading.value = searchLoadingCount > 0;
+};
 const randomLoading = ref(false);
 const nameSearchKeyword = ref('');
 const nameSearchLoading = ref(false);
@@ -1016,15 +1063,25 @@ const arrowCells = [
 
 // 轻量防抖：避免长文本实时输入时频繁重绘卡顿
 let updateTimer = null;
-const scheduleUpdate = (immediate = false) => {
+// 最近一次由表单写出的 JSON 文本，用于区分「表单同步」与「用户在编辑器里改」
+let jsonSnapshot = '';
+
+// 把表单序列化写回编辑器。卡图是 base64，整段序列化按毫秒计，只在防抖回调里做一次
+const setJsonText = () => {
   jsonData.value = JSON.stringify(formData, null, 2);
+  jsonSnapshot = jsonData.value;
+};
+
+const scheduleUpdate = (immediate = false) => {
   if (immediate) {
     if (updateTimer) clearTimeout(updateTimer);
+    setJsonText();
     cardLeaf.value?.setData(buildCardData());
     return;
   }
   if (updateTimer) clearTimeout(updateTimer);
   updateTimer = setTimeout(() => {
+    setJsonText();
     cardLeaf.value?.setData(buildCardData());
   }, 120);
 };
@@ -1123,31 +1180,31 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  // 防抖定时器必须清理：卸载后回调仍会访问已 destroy 的 leafer
+  if (updateTimer) {
+    clearTimeout(updateTimer);
+    updateTimer = null;
+  }
+  if (sliderFrame) {
+    cancelAnimationFrame(sliderFrame);
+    sliderFrame = 0;
+  }
+  cardLoadToken += 1;
   canvasResizeObserver?.disconnect();
+  canvasResizeObserver = null;
   cardLeaf.value?.leafer.destroy();
 });
 
-const getCardClass = cardType => {
-  switch (cardType) {
-    case 'yugioh': return YugiohCard;
-    case 'rush-duel': return RushDuelCard;
-    case 'yugioh-back': return YugiohBackCard;
-    case 'field-center': return FieldCenterCard;
-    case 'yugioh-series-2': return YugiohSeries2Card;
-    default: return YugiohCard;
-  }
+// 卡类型 → 渲染类 + 示例数据；新增卡类型只需在此登记一处
+const CARD_REGISTRY = {
+  yugioh: { Card: YugiohCard, demo: yugiohDemo },
+  'rush-duel': { Card: RushDuelCard, demo: rushDuelDemo },
+  'yugioh-back': { Card: YugiohBackCard, demo: yugiohBackDemo },
+  'field-center': { Card: FieldCenterCard, demo: fieldCenterDemo },
+  'yugioh-series-2': { Card: YugiohSeries2Card, demo: yugiohSeries2Demo },
 };
 
-const getCardDemo = cardType => {
-  switch (cardType) {
-    case 'yugioh': return { ...yugiohDemo };
-    case 'rush-duel': return { ...rushDuelDemo };
-    case 'yugioh-back': return { ...yugiohBackDemo };
-    case 'field-center': return { ...fieldCenterDemo };
-    case 'yugioh-series-2': return { ...yugiohSeries2Demo };
-    default: return { ...yugiohDemo };
-  }
-};
+const getCardEntry = cardType => CARD_REGISTRY[cardType] || CARD_REGISTRY.yugioh;
 
 const changeCard = cardType => {
   form.card = cardType;
@@ -1157,9 +1214,9 @@ const changeCard = cardType => {
     card.value.scrollTop = 0;
     card.value.scrollLeft = 0;
   }
-  const Card = getCardClass(cardType);
-  const demo = getCardDemo(cardType);
-  demo.scale = 0.5; // 默认缩小到 50% 以便查看完整卡片
+  const { Card, demo: demoSource } = getCardEntry(cardType);
+  // 拷贝一份再改，避免污染模块级示例数据
+  const demo = { ...demoSource, scale: 0.5 }; // 默认缩小到 50% 以便查看完整卡片
 
   Object.keys(formData).forEach(key => delete formData[key]);
   Object.assign(formData, demo);
@@ -1174,7 +1231,7 @@ const changeCard = cardType => {
   });
   syncCardViewSize(); // 包装层匹配 canvas 尺寸，flex 自动居中
   observeCanvas(); // 监听后续异步加载导致的 canvas 尺寸变化
-  jsonData.value = JSON.stringify(demo, null, 2);
+  setJsonText();
 };
 
 
@@ -1241,27 +1298,91 @@ const updateCard = () => {
     // setData 内部会调用 draw()，而 draw() 最后一步已含 updateScale()，无需重复调用
     cardLeaf.value.setData(buildCardData());
   }
-  jsonData.value = JSON.stringify(formData, null, 2);
+  setJsonText();
 };
 
 const resetCard = () => {
-  const demo = getCardDemo(form.card);
-  demo.scale = 0.5;
+  const demo = { ...getCardEntry(form.card).demo, scale: 0.5 };
   Object.keys(formData).forEach(key => delete formData[key]);
   Object.assign(formData, demo);
   cardLeaf.value?.setData(buildCardData());
-  jsonData.value = JSON.stringify(demo, null, 2);
+  setJsonText();
   ElMessage.success(t('resetSuccess'));
 };
 
 const exportImage = () => {
   if (!cardLeaf.value?.leafer) return;
   const name = (formData.name || '卡片').replace(/[/:*?"<>|]/g, '-');
-  cardLeaf.value.leafer.export(`${name}.png`, {
+  const leafer = cardLeaf.value.leafer;
+  const pixelRatio = window.devicePixelRatio || 1;
+  // 画布逻辑尺寸已按视图缩放与设备像素比折算过，倍率直接乘在此尺寸上
+  const { ratio, downscaled } = clampExportRatio(leafer.width, leafer.height, exportScale.value, pixelRatio);
+  leafer.export(`${name}.png`, {
     screenshot: true,
-    pixelRatio: devicePixelRatio,
-    scale: exportScale.value,
+    pixelRatio: downscaled ? ratio : pixelRatio,
+    scale: downscaled ? 1 : exportScale.value,
+  }).then(() => {
+    if (downscaled) ElMessage.warning(t('exportImageDownscaled'));
+  }).catch(err => {
+    // export 返回 Promise，不捕获会静默失败
+    console.error('[exportImage] 导出失败:', err);
+    ElMessage.error(t('exportImageError'));
   });
+};
+
+// 批量导出：读取一个或多个 JSON 文件（单张对象或数组），逐张渲染并下载 PNG。
+// 每张之间留出渲染间隙，最后恢复用户当前正在编辑的卡片数据。
+const batchInput = ref(null);
+const batchLoading = ref(false);
+
+const batchExport = () => {
+  batchInput.value?.click();
+};
+
+const waitForRender = () => new Promise(resolve => {
+  requestAnimationFrame(() => setTimeout(resolve, 150));
+});
+
+const onBatchFiles = async event => {
+  const files = [...(event.target.files || [])];
+  event.target.value = '';
+  if (!files.length || !cardLeaf.value?.leafer) {
+    return;
+  }
+  const snapshot = JSON.parse(JSON.stringify(toRaw(formData)));
+  const baseData = getCardEntry(form.card).demo;
+  batchLoading.value = true;
+  let exported = 0;
+  try {
+    for (const file of files) {
+      const parsed = JSON.parse(await file.text());
+      const list = Array.isArray(parsed) ? parsed : [parsed];
+      for (const raw of list) {
+        const data = isForeignCard(raw) ? normalizeForeignCard(raw) : raw;
+        Object.keys(formData).forEach(key => delete formData[key]);
+        Object.assign(formData, { ...baseData, ...data });
+        cardLeaf.value.setData(buildCardData());
+        await waitForRender();
+        const name = (formData.name || `card-${exported + 1}`).replace(/[/:*?"<>|]/g, '-');
+        await cardLeaf.value.leafer.export(`${name}.png`, {
+          screenshot: true,
+          pixelRatio: window.devicePixelRatio || 1,
+          scale: exportScale.value,
+        });
+        exported += 1;
+      }
+    }
+    ElMessage.success(`${t('batchExportDone')} ${exported}`);
+  } catch (err) {
+    console.error('[batchExport] 批量导出失败:', err);
+    ElMessage.error(t('batchExportFail'));
+  } finally {
+    Object.keys(formData).forEach(key => delete formData[key]);
+    Object.assign(formData, snapshot);
+    cardLeaf.value?.setData(buildCardData());
+    setJsonText();
+    batchLoading.value = false;
+  }
 };
 
 // 导出 JSON 数据
@@ -1273,8 +1394,11 @@ const exportData = () => {
   const a = document.createElement('a');
   a.href = url;
   a.download = `${name}.json`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  // 立即 revoke 会让部分浏览器中断下载，延后释放
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   ElMessage.success(t('exportSuccess'));
 };
 
@@ -1289,16 +1413,17 @@ const importData = () => {
     const reader = new FileReader();
     reader.onload = ev => {
       try {
-        const data = JSON.parse(ev.target.result);
+        const parsed = JSON.parse(ev.target.result);
+        // 外部工具的字段名不同，先归一化再合并；本项目导出数据走原路径
+        const data = isForeignCard(parsed) ? normalizeForeignCard(parsed) : parsed;
         // 与当前卡类型的默认值合并，避免导入旧/残缺数据丢失字段
-        const demo = getCardDemo(form.card);
-        const merged = { ...demo, ...data };
+        const merged = { ...getCardEntry(form.card).demo, ...data };
         Object.keys(formData).forEach(key => delete formData[key]);
         Object.assign(formData, merged);
         if (cardLeaf.value) {
           cardLeaf.value.setData(buildCardData());
         }
-        jsonData.value = JSON.stringify(merged, null, 2);
+        setJsonText();
         ElMessage.success(t('importSuccess'));
       } catch (err) {
         ElMessage.error(t('importError'));
@@ -1327,6 +1452,19 @@ const updateCanvasOnly = () => {
   syncCardViewSize();
 };
 
+// 排版滑杆拖动预览：每帧最多刷新一次画布，且不写 JSON 编辑器。
+// 指针移动频率高于渲染帧率，逐次刷新会排队堆积成卡顿；写 JSON 又会序列化整张卡。
+let sliderFrame = 0;
+const onSliderInput = () => {
+  if (sliderFrame) {
+    return;
+  }
+  sliderFrame = requestAnimationFrame(() => {
+    sliderFrame = 0;
+    updateCanvasOnly();
+  });
+};
+
 const zoomIn = () => {
   formData.scale = Math.min(2, (formData.scale || 0.5) + 0.1);
   updateCanvasOnly();
@@ -1342,14 +1480,50 @@ const resetZoom = () => {
   updateCanvasOnly();
 };
 
-// 图片上传
-const onFileUpload = file => {
-  const reader = new FileReader();
-  reader.onload = e => {
-    formData.image = e.target.result;
-    updateCard();
+// 卡图边长上限：1200 已覆盖 5x 导出的清晰度需求，再大只会让 base64 字符串在
+// 表单、JSON 编辑器、画布之间重复复制
+const MAX_IMAGE_SIDE = 1200;
+const MAX_ORIGINAL_BYTES = 400 * 1024;
+
+// 读取用户上传的卡图：小图原样保留，大图缩放到上限并转 JPEG，避免几十 MB 的 base64 常驻
+const readCardImage = file => new Promise((resolve, reject) => {
+  if (file.size <= MAX_ORIGINAL_BYTES) {
+    const reader = new FileReader();
+    reader.onload = event => resolve(event.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  const image = new Image();
+  image.onload = () => {
+    const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(image.width, image.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(image.width * scale);
+    canvas.height = Math.round(image.height * scale);
+    const ctx = canvas.getContext('2d');
+    // JPEG 没有透明通道，先铺白底，避免透明区域变黑
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    resolve(canvas.toDataURL('image/jpeg', 0.92));
   };
-  reader.readAsDataURL(file.raw);
+  image.onerror = err => {
+    URL.revokeObjectURL(url);
+    reject(err);
+  };
+  image.src = url;
+});
+
+// 图片上传
+const onFileUpload = async file => {
+  try {
+    formData.image = await readCardImage(file.raw);
+    updateCard();
+  } catch {
+    ElMessage.error(t('imageError'));
+  }
 };
 
 const setImageUrl = () => {
@@ -1392,8 +1566,7 @@ const randomGenerate = async () => {
   randomLoading.value = true;
   try {
     if (!cardIdCache) {
-      const resp = await fetch('./card-ids.json');
-      cardIdCache = await resp.json();
+      cardIdCache = await fetchJsonWithTimeout('./card-ids.json');
     }
     const id = cardIdCache[Math.floor(Math.random() * cardIdCache.length)];
     formData.password = String(id);
@@ -1408,79 +1581,6 @@ const randomGenerate = async () => {
 // ──────────────────────────────────────────────
 // 密码搜索：调用 ygocdb.com API 自动填充卡片数据
 // ──────────────────────────────────────────────
-const RACE_MAP = {
-  sc: { 1: '战士族', 2: '魔法师族', 4: '天使族', 8: '恶魔族', 16: '不死族', 32: '机械族', 64: '水族', 128: '炎族', 256: '岩石族', 512: '鸟兽族', 1024: '植物族', 2048: '昆虫族', 4096: '雷族', 8192: '龙族', 16384: '兽族', 32768: '兽战士族', 65536: '恐龙族', 131072: '鱼族', 262144: '海龙族', 524288: '爬虫类族', 1048576: '念动力族', 2097152: '幻龙族', 4194304: '电子界族', 8388608: '幻神兽族', 16777216: '创造神族' },
-  tc: { 1: '戰士族', 2: '魔法師族', 4: '天使族', 8: '惡魔族', 16: '不死族', 32: '機械族', 64: '水族', 128: '炎族', 256: '岩石族', 512: '鳥獸族', 1024: '植物族', 2048: '昆蟲族', 4096: '雷族', 8192: '龍族', 16384: '獸族', 32768: '獸戰士族', 65536: '恐龍族', 131072: '魚族', 262144: '海龍族', 524288: '爬蟲類族', 1048576: '念動力族', 2097152: '幻龍族', 4194304: '電子界族', 8388608: '幻神獸族', 16777216: '創造神族' },
-  jp: { 1: '戦士族', 2: '魔法使い族', 4: '天使族', 8: '悪魔族', 16: 'アンデット族', 32: '機械族', 64: '水族', 128: '炎族', 256: '岩石族', 512: '鳥獣族', 1024: '植物族', 2048: '昆虫族', 4096: '雷族', 8192: 'ドラゴン族', 16384: '獣族', 32768: '獣戦士族', 65536: '恐竜族', 131072: '魚族', 262144: '海竜族', 524288: '爬虫類族', 1048576: 'サイキック族', 2097152: '幻竜族', 4194304: 'サイバース族', 8388608: '幻神獣族', 16777216: '創造神族' },
-  en: { 1: 'Warrior', 2: 'Spellcaster', 4: 'Fairy', 8: 'Fiend', 16: 'Zombie', 32: 'Machine', 64: 'Aqua', 128: 'Pyro', 256: 'Rock', 512: 'Winged Beast', 1024: 'Plant', 2048: 'Insect', 4096: 'Thunder', 8192: 'Dragon', 16384: 'Beast', 32768: 'Beast-Warrior', 65536: 'Dinosaur', 131072: 'Fish', 262144: 'Sea Serpent', 524288: 'Reptile', 1048576: 'Psychic', 2097152: 'Wyrm', 4194304: 'Cyberse', 8388608: 'Divine-Beast', 16777216: 'Creator God' },
-  kr: { 1: '전사족', 2: '마법사족', 4: '천사족', 8: '악마족', 16: '언데드족', 32: '기계족', 64: '물족', 128: '화염족', 256: '암석족', 512: '비행야수족', 1024: '식물족', 2048: '곤충족', 4096: '번개족', 8192: '드래곤족', 16384: '야수족', 32768: '야수전사족', 65536: '공룡족', 131072: '어류족', 262144: '해룡족', 524288: '파충류족', 1048576: '사이킥족', 2097152: '환룡족', 4194304: '사이버스족', 8388608: '환신야수족', 16777216: '창조신족' },
-};
-
-// 类型标签多语言映射（怪兽子类型/效果分类）
-const TYPE_LABELS = {
-  sc: { tuner: '协调', spirit: '灵魂', union: '同盟', gemini: '二重', toon: '卡通', flip: '反转', link: '连接', xyz: '超量', synchro: '同调', fusion: '融合', ritual: '仪式', effect: '效果', normal: '通常', pendulum: '灵摆' },
-  tc: { tuner: '協調', spirit: '靈魂', union: '同盟', gemini: '二重', toon: '卡通', flip: '反轉', link: '連接', xyz: '超量', synchro: '同步', fusion: '融合', ritual: '儀式', effect: '效果', normal: '通常', pendulum: '靈擺' },
-  jp: { tuner: 'チューナー', spirit: 'スピリット', union: 'ユニオン', gemini: 'デュアル', toon: 'トゥーン', flip: 'リバース', link: 'リンク', xyz: 'エクシーズ', synchro: 'シンクロ', fusion: '融合', ritual: '儀式', effect: '効果', normal: '通常', pendulum: 'ペンデュラム' },
-  en: { tuner: 'Tuner', spirit: 'Spirit', union: 'Union', gemini: 'Gemini', toon: 'Toon', flip: 'Flip', link: 'Link', xyz: 'Xyz', synchro: 'Synchro', fusion: 'Fusion', ritual: 'Ritual', effect: 'Effect', normal: 'Normal', pendulum: 'Pendulum' },
-  kr: { tuner: '튜너', spirit: '스피릿', union: '유니온', gemini: '듀얼', toon: '툰', flip: '리버스', link: '링크', xyz: '엑시즈', synchro: '싱크로', fusion: '융합', ritual: '의식', effect: '효과', normal: '일반', pendulum: '펜듈럼' },
-};
-
-const ATTR_KEY = { 1: 'earth', 2: 'water', 4: 'fire', 8: 'wind', 16: 'light', 32: 'dark', 64: 'divine' };
-
-// ygoprodeck 英文数据源字段映射（用于英文描述的完整数据）
-const YGOPRODECK_ATTR = { LIGHT: 'light', DARK: 'dark', EARTH: 'earth', WATER: 'water', FIRE: 'fire', WIND: 'wind', DIVINE: 'divine' };
-// ygoprodeck linkmarkers → 项目 arrowList 数字（1上 2右上 3右 4右下 5下 6左下 7左 8左上）
-const YGOPRODECK_MARKERS = { Top: 1, 'Top-Right': 2, Right: 3, 'Bottom-Right': 4, Bottom: 5, 'Bottom-Left': 6, Left: 7, 'Top-Left': 8 };
-// ygoprodeck frameType → [主类型, 卡类]
-const YGOPRODECK_FRAME = {
-  normal: ['monster', 'normal'],
-  effect: ['monster', 'effect'],
-  ritual: ['monster', 'ritual'],
-  fusion: ['monster', 'fusion'],
-  synchro: ['monster', 'synchro'],
-  xyz: ['monster', 'xyz'],
-  link: ['monster', 'link'],
-  spell: ['spell', 'normal'],
-  trap: ['trap', 'normal'],
-  normal_pendulum: ['pendulum', 'normal-pendulum'],
-  effect_pendulum: ['pendulum', 'effect-pendulum'],
-  ritual_pendulum: ['pendulum', 'ritual-pendulum'],
-  fusion_pendulum: ['pendulum', 'fusion-pendulum'],
-  synchro_pendulum: ['pendulum', 'synchro-pendulum'],
-  xyz_pendulum: ['pendulum', 'xyz-pendulum'],
-};
-// ygoprodeck 魔法/陷阱 race → 项目 icon
-const YGOPRODECK_ICON = { Field: 'field', Equip: 'equip', Continuous: 'continuous', 'Quick-Play': 'quick-play', Ritual: 'ritual', Counter: 'counter', Normal: '' };
-
-const getRaceName = (raceCode, lang) => {
-  const map = RACE_MAP[lang] || RACE_MAP.sc;
-  return map[raceCode] || '';
-};
-
-const getTypeLabels = lang => TYPE_LABELS[lang] || TYPE_LABELS.sc;
-
-const parseOcgType = (code, lang = 'sc') => {
-  const L = getTypeLabels(lang);
-  if (code & 0x2) return { type: 'spell', labels: [] };
-  if (code & 0x4) return { type: 'trap', labels: [] };
-  const result = { type: 'monster', labels: [], cardType: '' };
-  if (code & 0x1000000) result.type = 'pendulum';
-  if (code & 0x1000) result.labels.push(L.tuner);
-  if (code & 0x200) result.labels.push(L.spirit);
-  if (code & 0x400) result.labels.push(L.union);
-  if (code & 0x800) result.labels.push(L.gemini);
-  if (code & 0x8000) result.labels.push(L.toon);
-  if (code & 0x200000) result.labels.push(L.flip);
-  if (code & 0x4000000) { result.labels.push(L.link); result.cardType = 'link'; }
-  else if (code & 0x800000) { result.labels.push(L.xyz); result.cardType = 'xyz'; }
-  else if (code & 0x2000) { result.labels.push(L.synchro); result.cardType = 'synchro'; }
-  else if (code & 0x40) { result.labels.push(L.fusion); result.cardType = 'fusion'; }
-  else if (code & 0x80) { result.labels.push(L.ritual); result.cardType = 'ritual'; }
-  if (code & 0x20 || result.labels.length) { result.labels.push(L.effect); result.cardType = result.cardType || 'effect'; }
-  else { result.labels.push(L.normal); result.cardType = 'normal'; }
-  return result;
-};
-
 // 构建 ygotoken 卡图 URL（三环境：DEV 代理 / HTTPS 用 weserv 桥接 / HTTP·EXE 直连）
 const getYgotokenImageUrl = cid => {
   if (!cid) return '';
@@ -1498,8 +1598,11 @@ const getYgotokenImageUrl = cid => {
 
 // 加载 ygotoken 全量卡片缓存（仅用于 cid→卡图 和 补充译名）
 let ygotokenCache = null;
+let ygotokenCacheFailedAt = 0;
 const loadYgotokenCache = async () => {
   if (ygotokenCache) return ygotokenCache;
+  // 失败后 30 秒内不重复拉取全量卡表，超时后再试，避免一次瞬时故障使兜底永久失效
+  if (Date.now() - ygotokenCacheFailedAt < 30000) return [];
   try {
     // ygotoken 站点仅支持 http；HTTPS 静态页无法直连（主路径 ygocdb 已提供 cid，此处仅兜底）
     const url = import.meta.env.DEV
@@ -1507,20 +1610,19 @@ const loadYgotokenCache = async () => {
       : (window.location.protocol === 'https:'
         ? 'https://www.ygotoken.com/api/cards'
         : 'http://www.ygotoken.com/api/cards');
-    const resp = await fetch(url);
-    ygotokenCache = await resp.json();
+    ygotokenCache = await fetchJsonWithTimeout(url, {}, 20000);
     return ygotokenCache;
   } catch {
-    ygotokenCache = [];
+    ygotokenCacheFailedAt = Date.now();
     return [];
   }
 };
 
 // 英文卡片数据搜索：使用 ygoprodeck 公开 API（含英文名、英文描述、英文种族、卡图）
-const searchPasswordEn = async (pwd, silent = false) => {
+const searchPasswordEn = async (pwd, silent = false, requestToken) => {
   try {
-    const resp = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${pwd}`, { cache: 'no-cache' });
-    const result = await resp.json();
+    const result = await fetchJsonWithTimeout(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${pwd}`);
+    if (requestToken !== cardLoadToken) return;
     const card = result?.data?.[0];
     if (!card) { if (!silent) ElMessage.warning(t('passwordNotFound')); return; }
 
@@ -1591,8 +1693,7 @@ const searchPasswordEn = async (pwd, silent = false) => {
     // 卡图：统一走 ygotoken（与中文模式一致），需通过 ygocdb 拿 cid
     let cid = null;
     try {
-      const ygocdbResp = await fetch(`https://ygocdb.com/api/v0/card/${pwd}?show=all`, { cache: 'no-cache' });
-      const ygocdb = await ygocdbResp.json();
+      const ygocdb = await fetchJsonWithTimeout(`https://ygocdb.com/api/v0/card/${pwd}?show=all`);
       cid = ygocdb?.cid || null;
       if (!cid) {
         const cache = await loadYgotokenCache();
@@ -1601,6 +1702,7 @@ const searchPasswordEn = async (pwd, silent = false) => {
       }
     } catch { /* 忽略 cid 查找失败 */ }
 
+    if (requestToken !== cardLoadToken) return;
     if (cid) {
       formData.image = getYgotokenImageUrl(cid);
     } else {
@@ -1611,9 +1713,8 @@ const searchPasswordEn = async (pwd, silent = false) => {
     updateCard();
     if (!silent) ElMessage.success(`${t('randomOne')}: ${formData.name}`);
   } catch {
+    if (requestToken !== cardLoadToken) return;
     if (!silent) ElMessage.error(t('networkError'));
-  } finally {
-    searchLoading.value = false;
   }
 };
 
@@ -1621,20 +1722,21 @@ const searchPassword = async (silent = false) => {
   const pwd = (formData.password || '').trim();
   if (!pwd) { if (!silent) ElMessage.warning(t('pleaseInputPassword')); return; }
   if (!/^\d{6,8}$/.test(pwd)) { if (!silent) ElMessage.warning(t('passwordInvalid')); return; }
-  if (!silent) searchLoading.value = true;
+  const requestToken = ++cardLoadToken;
+  if (!silent) startSearchLoading();
   try {
     const lang = formData.language || 'sc';
 
     // 英文模式：使用 ygoprodeck 公开英文数据源（含英文描述）
     if (lang === 'en') {
-      await searchPasswordEn(pwd, silent);
+      await searchPasswordEn(pwd, silent, requestToken);
       return;
     }
 
     // 主数据源：百鸽 API ?show=all（顶层含全译名 + text.types 含箭头）
-    const ygocdbResp = await fetch(`https://ygocdb.com/api/v0/card/${pwd}?show=all`, { cache: 'no-cache' });
-    const ygocdb = await ygocdbResp.json();
-    if (!ygocdb?.data) { ElMessage.warning(t('passwordNotFound')); return; }
+    const ygocdb = await fetchJsonWithTimeout(`https://ygocdb.com/api/v0/card/${pwd}?show=all`);
+    if (requestToken !== cardLoadToken) return;
+    if (!ygocdb?.data) { if (!silent) ElMessage.warning(t('passwordNotFound')); return; }
 
     const ocgData = ygocdb.data;
     const textData = ygocdb.text || {};
@@ -1677,6 +1779,7 @@ const searchPassword = async (silent = false) => {
         if (ygocard) cardCid.value = ygocard.cid || null;
       } catch { /* 忽略 */ }
     }
+    if (requestToken !== cardLoadToken) return;
     formData.type = mainType;
     formData.cardType = subType;
     formData.attribute = attrKey;
@@ -1720,7 +1823,7 @@ const searchPassword = async (silent = false) => {
     formData.atkBar = mainType === 'monster' || mainType === 'pendulum';
     if (mainType === 'pendulum') {
       formData.pendulumScale = (rawLevel >> 16) & 0xFF;
-      formData.pendulumType = `${subType !== 'normal' ? subType : 'effect'}-pendulum`;
+      formData.pendulumType = toPendulumType(subType);
     }
 
     // 卡图：ygotoken 的 WebP 高清艺术插画（1200×1200）
@@ -1728,16 +1831,17 @@ const searchPassword = async (silent = false) => {
       formData.image = getYgotokenImageUrl(cardCid.value);
     } else {
       formData.image = '';
-      ElMessage.warning(t('noImage'));
+      if (!silent) ElMessage.warning(t('noImage'));
     }
 
     updateCard();
     if (!silent) ElMessage.success(`${t('randomOne')}: ${formData.name}`);
   } catch (e) {
+    if (requestToken !== cardLoadToken) return;
     if (!silent) ElMessage.error(t('networkError'));
     cardCid.value = null;
   } finally {
-    if (!silent) searchLoading.value = false;
+    if (!silent) stopSearchLoading();
   }
 };
 
@@ -1747,8 +1851,7 @@ const searchByName = async () => {
   if (!kw) { ElMessage.warning(t('pleaseInputName')); return; }
   nameSearchLoading.value = true;
   try {
-    const resp = await fetch(`https://ygocdb.com/api/v0/?search=${encodeURIComponent(kw)}`);
-    const result = await resp.json();
+    const result = await fetchJsonWithTimeout(`https://ygocdb.com/api/v0/?search=${encodeURIComponent(kw)}`);
     if (!result?.result?.length) { ElMessage.warning(t('nameNotFound')); return; }
     formData.password = String(result.result[0].id);
     nameSearchKeyword.value = '';
@@ -1760,39 +1863,48 @@ const searchByName = async () => {
   }
 };
 
-// JSON 编辑器 → 表单 单向同步（带防抖防止循环更新）
-let syncingFromJson = false;
+// JSON 编辑器 → 表单 单向同步
 watch(() => jsonData.value, newVal => {
-  if (syncingFromJson) return;
+  // jsonData 由表单同步写入时与快照完全一致，直接跳过：
+  // 否则每次输入都会 delete + assign 重建整个 formData，触发全量重算并打断输入框状态
+  if (newVal === jsonSnapshot) {
+    return;
+  }
   try {
     const parsed = JSON.parse(newVal);
     if (!parsed || typeof parsed !== 'object') return;
-    syncingFromJson = true;
     Object.keys(formData).forEach(key => delete formData[key]);
     Object.assign(formData, parsed);
     if (cardLeaf.value) {
       cardLeaf.value.setData(buildCardData());
     }
-    syncingFromJson = false;
   } catch {
-    syncingFromJson = false;
     // JSON 格式错误时不报错，用户在 JSON 编辑器中自行修正
   }
 });
 
-// 一键注音：将卡名/效果中的中文字符后追加 ruby 注音占位（渲染层暂不显示，存入自定义字段）
-// 当前实现：扫描所有中文字符，若该字符在常用汉字表里没有日文读音则跳过；将可能的注音字符保存到 descriptionPhonetic 字段（自定）
-// 简化版：直接生成 ruby 标签 HTML 字符串并保存到 formData.phoneticText，导出 JSON 时附带（用户可手动复制到外部工具）
+// 一键注音：把卡名与描述转成 [汉字(假名)] 语法，渲染层直接显示注音。
+// 读音来自常用词表与常用汉字表，专有名词仍需人工核对。
+const PHONETIC_FIELDS = ['name', 'effect', 'description', 'pendulumDescription'];
 const autoPhonetic = () => {
-  const text = formData.name || '';
-  if (!text.trim()) {
-    ElMessage.warning(t('pleaseInputCardName'));
+  let changed = 0;
+  PHONETIC_FIELDS.forEach(key => {
+    const raw = formData[key];
+    if (!raw || typeof raw !== 'string' || hasRuby(raw)) {
+      return;
+    }
+    const converted = toRubyText(raw);
+    if (converted !== raw) {
+      formData[key] = converted;
+      changed += 1;
+    }
+  });
+  if (!changed) {
+    ElMessage.info(t('phoneticNothing'));
     return;
   }
-  // 简化：仅在控制台提示用户
-  // 完整功能需要汉字 → 假名 映射表（约 6000 字），这里提供占位实现
-  ElMessage.info(t('phoneticInfo'));
-  window.open(`https://kanji.reader.bz/h/${encodeURIComponent(text)}`, '_blank', 'noopener');
+  updateCard();
+  ElMessage.success(t('phoneticApplied'));
 };
 </script>
 
@@ -2265,7 +2377,6 @@ const autoPhonetic = () => {
     color: #909399;
     padding: 4px 0;
     user-select: none;
-    outline: none;
 
     &:hover {
       color: var(--el-color-primary);
@@ -2289,6 +2400,62 @@ const autoPhonetic = () => {
 .form-scroll::-webkit-scrollbar-thumb:hover,
 .card-canvas::-webkit-scrollbar-thumb:hover {
   background: #c0c4cc;
+}
+
+@media (max-width: 900px) {
+  .yugioh-card-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .main-row {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .card-preview {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+    overflow: visible;
+
+    .card-canvas {
+      max-height: 60vh;
+      padding: 16px;
+    }
+
+    .preview-toolbar {
+      flex-wrap: wrap;
+      row-gap: 8px;
+
+      .toolbar-spacer {
+        display: none;
+      }
+    }
+  }
+
+  .param-panel {
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid #e4e7ed;
+    overflow: visible;
+  }
+
+  .form-scroll {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 640px) {
+  .preview-toolbar {
+    justify-content: center;
+  }
+
+  .param-header-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 </style>
