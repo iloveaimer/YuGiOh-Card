@@ -1,0 +1,29 @@
+{
+  "name": "游戏王卡片生成器",
+  "short_name": "游戏王制卡",
+  "description": "基于 Canvas 的游戏王卡片可视化制卡器，支持卡库检索与多语言卡面",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1727",
+  "theme_color": "#0b1727",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

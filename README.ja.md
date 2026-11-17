@@ -164,7 +164,7 @@ http.createServer((req, res) => {
 | copyright | 著作権表記 | enum | '' / 'en' / 'jp' / 'sc' | なし/英語/日本語/簡体字 | '' |
 | laser | ホログラム | enum | '' / 'laser1' / 'laser2' / 'laser3' / 'laser4' | スタイル1/2/3/4 | '' |
 | rare | レアリティ | enum | 'dt' / 'ur' / 'gr' / 'hr' / 'ser' / 'gser' / 'pser' | DT/UR/GR/HR/SER/GSER/PSER | '' |
-| twentieth | 周年 | string | '' / 'twentieth' / 'twentyfive' | なし/20周年/25周年 | '' |
+| twentieth | 周年 | string | '' / 'twentieth' | なし/20周年 | '' |
 | radius | 角丸 | boolean | — | — | true |
 | scale | 拡大率 | number | — | — | 1 |
 
