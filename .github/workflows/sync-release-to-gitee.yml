@@ -1,0 +1,80 @@
+name: 同步 Release 到 Gitee
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要同步的 GitHub Release tag（留空取最新）'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 确定 Release tag
+        id: rel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release view --repo "${{ github.repository }}" --json tagName --jq .tagName)
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "同步 Release: $TAG"
+
+      - name: 下载 GitHub Release 资产
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release-assets
+          gh release download "${{ steps.rel.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --dir release-assets \
+            --pattern '*.exe'
+          ls -lh release-assets
+
+      - name: 创建 Gitee Release
+        id: gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          TAG="${{ steps.rel.outputs.tag }}"
+          NOTE=$(curl -s -X GET \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${TAG}" \
+            -H 'Accept: application/vnd.github+json' \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("body") or "")')
+          BODY=$(python3 -c 'import json,sys; print(json.dumps({"access_token":sys.argv[1],"tag_name":sys.argv[2],"name":sys.argv[2],"body":sys.argv[3],"target_commitish":"main"},ensure_ascii=False))' "$GITEE_TOKEN" "$TAG" "$NOTE")
+          RESP=$(curl -s -X POST \
+            'https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases' \
+            -H 'Content-Type: application/json;charset=UTF-8' \
+            -d "$BODY")
+          echo "$RESP" > gitee-release.json
+          ID=$(python3 -c 'import json; d=json.load(open("gitee-release.json")); print(d.get("id",""))')
+          if [ -z "$ID" ]; then
+            echo "::error::Gitee Release 创建失败: $RESP"
+            exit 1
+          fi
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+          echo "Gitee Release 已创建: id=$ID"
+
+      - name: 上传资产到 Gitee Release
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          for asset in release-assets/*.exe; do
+            echo "上传 $(basename "$asset")"
+            curl -sS -X POST \
+              "https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases/${{ steps.gitee.outputs.id }}/attach_files" \
+              -F "access_token=${GITEE_TOKEN}" \
+              -F "file=@${asset}"
+            echo ""
+          done
