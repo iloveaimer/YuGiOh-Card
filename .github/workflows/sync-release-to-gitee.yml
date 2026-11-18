@@ -42,39 +42,55 @@ jobs:
             --pattern '*.exe'
           ls -lh release-assets
 
-      - name: 创建 Gitee Release
+      - name: 创建或复用 Gitee Release
         id: gitee
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         run: |
           TAG="${{ steps.rel.outputs.tag }}"
-          NOTE=$(curl -s -X GET \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${TAG}" \
-            -H 'Accept: application/vnd.github+json' \
-            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("body") or "")')
-          BODY=$(python3 -c 'import json,sys; print(json.dumps({"access_token":sys.argv[1],"tag_name":sys.argv[2],"name":sys.argv[2],"body":sys.argv[3],"target_commitish":"main"},ensure_ascii=False))' "$GITEE_TOKEN" "$TAG" "$NOTE")
-          RESP=$(curl -s -X POST \
-            'https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases' \
-            -H 'Content-Type: application/json;charset=UTF-8' \
-            -d "$BODY")
-          echo "$RESP" > gitee-release.json
-          ID=$(python3 -c 'import json; d=json.load(open("gitee-release.json")); print(d.get("id",""))')
-          if [ -z "$ID" ]; then
-            echo "::error::Gitee Release 创建失败: $RESP"
-            exit 1
+          EXIST=$(curl -s --max-time 60 \
+            "https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases/tags/${TAG}?access_token=${GITEE_TOKEN}")
+          ID=$(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); print(d.get("id","") if isinstance(d,dict) else "")' "$EXIST")
+          if [ -n "$ID" ]; then
+            echo "复用已有 Gitee Release: id=$ID"
+          else
+            NOTE=$(curl -s -X GET \
+              "https://api.github.com/repos/${{ github.repository }}/releases/tags/${TAG}" \
+              -H 'Accept: application/vnd.github+json' \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin).get("body") or "")')
+            BODY=$(python3 -c 'import json,sys; print(json.dumps({"access_token":sys.argv[1],"tag_name":sys.argv[2],"name":sys.argv[2],"body":sys.argv[3],"target_commitish":"main"},ensure_ascii=False))' "$GITEE_TOKEN" "$TAG" "$NOTE")
+            RESP=$(curl -s --max-time 60 -X POST \
+              'https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases' \
+              -H 'Content-Type: application/json;charset=UTF-8' \
+              -d "$BODY")
+            ID=$(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); print(d.get("id","") if isinstance(d,dict) else "")' "$RESP")
+            if [ -z "$ID" ]; then
+              echo "::error::Gitee Release 创建失败: $RESP"
+              exit 1
+            fi
+            echo "Gitee Release 已创建: id=$ID"
           fi
           echo "id=$ID" >> "$GITHUB_OUTPUT"
-          echo "Gitee Release 已创建: id=$ID"
 
       - name: 上传资产到 Gitee Release
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         run: |
+          ID="${{ steps.gitee.outputs.id }}"
           for asset in release-assets/*.exe; do
-            echo "上传 $(basename "$asset")"
-            curl -sS -X POST \
-              "https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases/${{ steps.gitee.outputs.id }}/attach_files" \
+            NAME=$(basename "$asset")
+            EXISTING=$(curl -s --max-time 60 \
+              "https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases/${ID}?access_token=${GITEE_TOKEN}" \
+              | python3 -c 'import json,sys; d=json.load(sys.stdin); print(any(a.get("name")==sys.argv[1] for a in d.get("assets",[])))' "$NAME")
+            if [ "$EXISTING" = "True" ]; then
+              echo "已存在，跳过: $NAME"
+              continue
+            fi
+            echo "上传 $NAME"
+            RESP=$(curl -sS --max-time 1800 --retry 3 --retry-delay 10 -X POST \
+              "https://gitee.com/api/v5/repos/iloveaimer/YuGiOh-Card/releases/${ID}/attach_files" \
               -F "access_token=${GITEE_TOKEN}" \
-              -F "file=@${asset}"
-            echo ""
+              -F "file=@${asset}")
+            python3 -c 'import json,sys; d=json.loads(sys.argv[1]); assert isinstance(d,dict) and d.get("id"), "上传失败: "+sys.argv[1]' "$RESP"
+            echo "已上传: $NAME"
           done
