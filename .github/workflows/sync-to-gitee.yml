@@ -1,0 +1,41 @@
+name: 同步到 Gitee
+
+# GitHub 为主仓库：main、gh-pages、任意分支与 tag 推送后自动镜像到 Gitee。
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  workflow_dispatch:
+
+concurrency:
+  group: sync-to-gitee
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出全部历史、分支与标签
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 拉取所有远端分支
+        run: git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune
+
+      - name: 配置 Gitee 凭据
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          if [ -z "$GITEE_TOKEN" ]; then
+            echo "::error::缺少 GITEE_TOKEN，请在 GitHub 仓库 Settings → Secrets → Actions 添加"
+            exit 1
+          fi
+          printf 'https://iloveaimer:%s@gitee.com\n' "$GITEE_TOKEN" > "$HOME/.git-credentials"
+          git config --global credential.helper store
+          git remote add gitee https://gitee.com/iloveaimer/YuGiOh-Card.git
+
+      - name: 推送分支与标签
+        run: |
+          git push gitee '+refs/remotes/origin/*:refs/heads/*' --force
+          git push gitee --tags --force
